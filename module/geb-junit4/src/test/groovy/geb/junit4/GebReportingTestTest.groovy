@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package geb.junit4
 
 import geb.test.CallbackHttpServer
-import geb.Page
-import org.junit.*
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
@@ -25,9 +25,9 @@ import org.junit.runners.JUnit4
 class GebReportingTestTest extends GebReportingTest {
 
 	def server = new CallbackHttpServer()
-	
+
 	static private counter = 0
-	
+
 	static responseText = """
 		<html>
 		<body>
@@ -35,7 +35,7 @@ class GebReportingTestTest extends GebReportingTest {
 		</body>
 		</html>
 	"""
-	
+
 	@Before
 	void setUp() {
 		server.start()
@@ -45,12 +45,12 @@ class GebReportingTestTest extends GebReportingTest {
 		browser.baseUrl = server.baseUrl
 		go()
 	}
-	
-	@Test 
+
+	@Test
 	void a() {
 		doTestReport()
 	}
-	
+
 	@Test
 	void b() {
 		doTestReport()
@@ -60,7 +60,7 @@ class GebReportingTestTest extends GebReportingTest {
 	void c() {
 		doTestReport()
 	}
-	
+
 	def doTestReport() {
 		if (++counter > 1) {
 			def report = reportGroupDir.listFiles().find { it.name.startsWith("00" + (counter - 1)) }
@@ -68,10 +68,9 @@ class GebReportingTestTest extends GebReportingTest {
 			assert report.text.contains('<div class="d1" id="d1">')
 		}
 	}
-	
+
 	@After
 	void tearDown() {
 		server.stop()
-		super.tearDown()
 	}
 }

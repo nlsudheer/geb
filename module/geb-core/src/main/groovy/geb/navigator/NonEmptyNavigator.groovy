@@ -1,11 +1,26 @@
+/*
+ * Copyright 2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package geb.navigator
 
 import geb.Browser
 import geb.Page
+import geb.error.UnableToSetElementException
 import geb.error.UndefinedAtCheckerException
 import geb.error.UnexpectedPageException
 import geb.textmatching.TextMatcher
-import geb.waiting.WaitTimeoutException
 import org.openqa.selenium.By
 import org.openqa.selenium.NoSuchElementException
 import org.openqa.selenium.WebElement
@@ -23,6 +38,8 @@ class NonEmptyNavigator extends AbstractNavigator {
 		'pubdate', 'readonly', 'required', 'reversed', 'scoped', 'seamless', 'seeking', 'selected',
 		'spellcheck', 'truespeed', 'willvalidate']
 
+	protected final static ELEMENTS_WITH_MUTABLE_VALUE = ['input', 'select', 'textarea']
+
 	protected final List<WebElement> contextElements
 
 	NonEmptyNavigator(Browser browser, Collection<? extends WebElement> contextElements) {
@@ -35,10 +52,10 @@ class NonEmptyNavigator extends AbstractNavigator {
 	}
 
 	@Override
-	Navigator find(String selectorString) {
+	Navigator find(String selector) {
 		List<WebElement> list = []
 		for (contextElement in contextElements) {
-			list.addAll contextElement.findElements(By.cssSelector(selectorString))
+			list.addAll contextElement.findElements(By.cssSelector(selector))
 		}
 		navigatorFor list
 	}
@@ -54,9 +71,9 @@ class NonEmptyNavigator extends AbstractNavigator {
 	}
 
 	@Override
-	Navigator filter(String selectorString) {
+	Navigator filter(String selector) {
 		navigatorFor contextElements.findAll { element ->
-			CssSelector.matches(element, selectorString)
+			CssSelector.matches(element, selector)
 		}
 	}
 
@@ -66,16 +83,16 @@ class NonEmptyNavigator extends AbstractNavigator {
 	}
 
 	@Override
-	Navigator not(String selectorString) {
+	Navigator not(String selector) {
 		navigatorFor contextElements.findAll { element ->
-			!CssSelector.matches(element, selectorString)
+			!CssSelector.matches(element, selector)
 		}
 	}
 
 	@Override
-	Navigator not(Map<String, Object> predicates, String selectorString) {
+	Navigator not(Map<String, Object> predicates, String selector) {
 		navigatorFor contextElements.findAll { element ->
-			!(CssSelector.matches(element, selectorString) && matches(element, predicates))
+			!(CssSelector.matches(element, selector) && matches(element, predicates))
 		}
 	}
 
@@ -149,72 +166,103 @@ class NonEmptyNavigator extends AbstractNavigator {
 	}
 
 	@Override
-	Navigator next(String selectorString) {
-		navigatorFor collectElements {
-			def siblings = it.findElements(By.xpath("following-sibling::*"))
-			siblings.find { CssSelector.matches(it, selectorString) }
+	Navigator next(Map<String, Object> attributes) {
+		navigatorFor collectFollowingSiblings {
+			it.find { matches(it, attributes) }
+		}
+	}
+
+	@Override
+	Navigator next(Map<String, Object> attributes = [:], String selector) {
+		navigatorFor collectFollowingSiblings {
+			it.find { CssSelector.matches(it, selector) && matches(it, attributes) }
 		}
 	}
 
 	@Override
 	Navigator nextAll() {
-		navigatorFor collectElements {
-			it.findElements By.xpath("following-sibling::*")
+		navigatorFor collectFollowingSiblings()
+	}
+
+	@Override
+	Navigator nextAll(Map<String, Object> attributes) {
+		navigatorFor collectFollowingSiblings {
+			it.findAll { matches(it, attributes) }
 		}
 	}
 
 	@Override
-	Navigator nextAll(String selectorString) {
-		navigatorFor collectElements {
-			def siblings = it.findElements(By.xpath("following-sibling::*"))
-			siblings.findAll { CssSelector.matches(it, selectorString) }
+	Navigator nextAll(Map<String, Object> attributes = [:], String selector) {
+		navigatorFor collectFollowingSiblings {
+			it.findAll { CssSelector.matches(it, selector) && matches(it, attributes) }
 		}
 	}
 
 	@Override
-	Navigator nextUntil(String selectorString) {
-		navigatorFor collectElements { element ->
-			def siblings = element.findElements(By.xpath("following-sibling::*"))
-			collectUntil(siblings, selectorString)
+	Navigator nextUntil(Map<String, Object> attributes) {
+		navigatorFor collectFollowingSiblings {
+			collectUntil(it, attributes)
+		}
+	}
+
+	@Override
+	Navigator nextUntil(Map<String, Object> attributes = [:], String selector) {
+		navigatorFor collectFollowingSiblings {
+			collectUntil(it, attributes, selector)
 		}
 	}
 
 	@Override
 	Navigator previous() {
-		navigatorFor collectElements {
-			def siblings = it.findElements(By.xpath("preceding-sibling::*"))
-			siblings ? siblings.last() : EMPTY_LIST
+		navigatorFor collectPreviousSiblings {
+			it ? it.last() : EMPTY_LIST
 		}
 	}
 
 	@Override
-	Navigator previous(String selectorString) {
-		navigatorFor collectElements {
-			def siblings = it.findElements(By.xpath("preceding-sibling::*")).reverse()
-			siblings.find { CssSelector.matches(it, selectorString) }
+	Navigator previous(Map<String, Object> attributes) {
+		navigatorFor collectPreviousSiblings {
+			it.reverse().find { matches(it, attributes) }
+		}
+	}
+
+	@Override
+	Navigator previous(Map<String, Object> attributes = [:], String selector) {
+		navigatorFor collectPreviousSiblings {
+			it.reverse().find { CssSelector.matches(it, selector) && matches(it, attributes)  }
 		}
 	}
 
 	@Override
 	Navigator prevAll() {
-		navigatorFor collectElements {
-			it.findElements(By.xpath("preceding-sibling::*"))
+		navigatorFor collectPreviousSiblings()
+	}
+
+	@Override
+	Navigator prevAll(Map<String, Object> attributes) {
+		navigatorFor collectPreviousSiblings {
+			it.reverse().findAll { matches(it, attributes) }
 		}
 	}
 
 	@Override
-	Navigator prevAll(String selectorString) {
-		navigatorFor collectElements {
-			def siblings = it.findElements(By.xpath("preceding-sibling::*")).reverse()
-			siblings.findAll { CssSelector.matches(it, selectorString) }
+	Navigator prevAll(Map<String, Object> attributes = [:], String selector) {
+		navigatorFor collectPreviousSiblings {
+			it.reverse().findAll { CssSelector.matches(it, selector) && matches(it, attributes) }
 		}
 	}
 
 	@Override
-	Navigator prevUntil(String selectorString) {
-		navigatorFor collectElements { element ->
-			def siblings = element.findElements(By.xpath("preceding-sibling::*")).reverse()
-			collectUntil(siblings, selectorString)
+	Navigator prevUntil(Map<String, Object> attributes) {
+		navigatorFor collectPreviousSiblings {
+			collectUntil(it.reverse(), attributes)
+		}
+	}
+
+	@Override
+	Navigator prevUntil(Map<String, Object> attributes = [:], String selector) {
+		navigatorFor collectPreviousSiblings {
+			collectUntil(it.reverse(), attributes, selector)
 		}
 	}
 
@@ -226,63 +274,92 @@ class NonEmptyNavigator extends AbstractNavigator {
 	}
 
 	@Override
-	Navigator parent(String selectorString) {
-		parent().filter(selectorString)
+	Navigator parent(Map<String, Object> attributes) {
+		parent().filter(attributes)
+	}
+
+	@Override
+	Navigator parent(Map<String, Object> attributes = [:], String selector) {
+		parent().filter(attributes, selector)
 	}
 
 	@Override
 	Navigator parents() {
-		navigatorFor collectElements {
-			it.findElements(By.xpath("ancestor::*")).reverse()
+		navigatorFor collectParents {
+			it.reverse()
 		}
 	}
 
 	@Override
-	Navigator parents(String selectorString) {
-		navigatorFor collectElements {
-			def ancestors = it.findElements(By.xpath("ancestor::*")).reverse()
-			ancestors.findAll { CssSelector.matches(it, selectorString) }
+	Navigator parents(Map<String, Object> attributes) {
+		navigatorFor collectParents {
+			it.reverse().findAll { matches(it, attributes) }
 		}
 	}
 
 	@Override
-	Navigator parentsUntil(String selectorString) {
-		navigatorFor collectElements { element ->
-			def ancestors = element.findElements(By.xpath("ancestor::*")).reverse()
-			collectUntil(ancestors, selectorString)
+	Navigator parents(Map<String, Object> attributes = [:], String selector) {
+		navigatorFor collectParents {
+			it.reverse().findAll { CssSelector.matches(it, selector) && matches(it, attributes) }
 		}
 	}
 
 	@Override
-	Navigator closest(String selectorString) {
-		navigatorFor collectElements {
-			def parents = it.findElements(By.xpath("ancestor::*")).reverse()
-			parents.find { CssSelector.matches(it, selectorString) }
+	Navigator parentsUntil(Map<String, Object> attributes) {
+		navigatorFor collectParents {
+			collectUntil(it.reverse(), attributes)
+		}
+	}
+
+	@Override
+	Navigator parentsUntil(Map<String, Object> attributes = [:], String selector) {
+		navigatorFor collectParents {
+			collectUntil(it.reverse(), attributes, selector)
+		}
+	}
+
+	@Override
+	Navigator closest(Map<String, Object> attributes) {
+		navigatorFor collectParents {
+			it.reverse().find { matches(it, attributes) }
+		}
+	}
+
+	@Override
+	Navigator closest(Map<String, Object> attributes = [:], String selector) {
+		navigatorFor collectParents {
+			it.reverse().find { CssSelector.matches(it, selector) && matches(it, attributes) }
 		}
 	}
 
 	@Override
 	Navigator children() {
-		navigatorFor collectElements {
-			it.findElements By.xpath("child::*")
-		}
+		navigatorFor collectChildren()
 	}
 
 	@Override
-	Navigator children(String selectorString) {
-		children().filter(selectorString)
+	Navigator children(Map<String, Object> attributes) {
+		children().filter(attributes)
+	}
+
+	@Override
+	Navigator children(Map<String, Object> attributes = [:], String selector) {
+		children().filter(attributes, selector)
 	}
 
 	@Override
 	Navigator siblings() {
-		navigatorFor collectElements {
-			it.findElements(By.xpath("preceding-sibling::*")) + it.findElements(By.xpath("following-sibling::*"))
-		}
+		navigatorFor collectSiblings()
 	}
 
 	@Override
-	Navigator siblings(String selectorString) {
-		siblings().filter(selectorString)
+	Navigator siblings(Map<String, Object> attributes) {
+		siblings().filter(attributes)
+	}
+
+	@Override
+	Navigator siblings(Map<String, Object> attributes = [:], String selector) {
+		siblings().filter(attributes, selector)
 	}
 
 	@Override
@@ -298,6 +375,33 @@ class NonEmptyNavigator extends AbstractNavigator {
 	@Override
 	boolean isDisplayed() {
 		firstElement()?.displayed ?: false
+	}
+
+	@Override
+	boolean isDisabled() {
+		ensureTagIn(['button', 'input', 'option', 'select', 'textarea'], 'disabled')
+
+		def value = getAttribute("disabled")
+		// Different drivers return different values here
+		(value == "disabled" || value == "true")
+	}
+
+	@Override
+	boolean isEnabled() {
+		return !disabled
+	}
+
+	@Override
+	boolean isReadOnly() {
+		ensureTagIn(['input', 'textarea'], 'readonly')
+
+		def value = getAttribute("readonly")
+		(value == "readonly" || value == "true")
+	}
+
+	@Override
+	boolean isEditable() {
+		return !readOnly
 	}
 
 	@Override
@@ -355,18 +459,20 @@ class NonEmptyNavigator extends AbstractNavigator {
 		click()
 		browser.page(pageClass)
 		def at = false
-		def error = null
+		def assertionError = null
+		def throwable = null
 		try {
 			at = browser.verifyAt()
 		} catch (AssertionError e) {
-			error = e
-		} catch (WaitTimeoutException e) {
-			error = e
+			assertionError = e
 		} catch (UndefinedAtCheckerException e) {
 			at = true
+		} catch (Throwable e) {
+			throwable = e
+			throw e
 		} finally {
-			if (!at) {
-				throw new UnexpectedPageException(pageClass, error)
+			if (!at && !throwable) {
+				throw new UnexpectedPageException(pageClass, (Throwable) assertionError)
 			}
 		}
 		this
@@ -424,18 +530,18 @@ class NonEmptyNavigator extends AbstractNavigator {
 		contextElements*.toString()
 	}
 
-	@Override
 	def methodMissing(String name, arguments) {
 		if (!arguments) {
-			navigatorFor collectElements {
+			def navigator = navigatorFor collectElements {
 				it.findElements By.name(name)
 			}
-		} else {
-			throw new MissingMethodException(name, getClass(), arguments)
+			if (!navigator.empty) {
+				return navigator
+			}
 		}
+		throw new MissingMethodException(name, getClass(), arguments)
 	}
 
-	@Override
 	def propertyMissing(String name) {
 		switch (name) {
 			case ~/@.+/:
@@ -483,7 +589,9 @@ class NonEmptyNavigator extends AbstractNavigator {
 				buffer << "." << CssSelector.escape(className)
 			}
 		}
-		if (buffer[0] == "*" && buffer.length() > 1) buffer.deleteCharAt(0)
+		if (buffer[0] == "*" && buffer.length() > 1) {
+			buffer.deleteCharAt(0)
+		}
 		return buffer.toString()
 	}
 
@@ -528,7 +636,9 @@ class NonEmptyNavigator extends AbstractNavigator {
 		def values = []
 		inputs.each { WebElement input ->
 			def value = getInputValue(input)
-			if (value != null) values << value
+			if (value != null) {
+				values << value
+			}
 		}
 		return values.size() < 2 ? values[0] : values
 	}
@@ -539,7 +649,7 @@ class NonEmptyNavigator extends AbstractNavigator {
 		if (input.tagName == "select") {
 			def select = new SelectFactory().createSelectFor(input)
 			if (select.multiple) {
-				value = select.allSelectedOptions.collect { getValue(it)}
+				value = select.allSelectedOptions.collect { getValue(it) }
 			} else {
 				value = getValue(select.firstSelectedOption)
 			}
@@ -558,6 +668,12 @@ class NonEmptyNavigator extends AbstractNavigator {
 	}
 
 	protected void setInputValues(Collection<WebElement> inputs, value) {
+		def unsupportedElements = inputs*.tagName*.toLowerCase() - ELEMENTS_WITH_MUTABLE_VALUE
+
+		if (unsupportedElements) {
+			throw new UnableToSetElementException(*unsupportedElements)
+		}
+
 		inputs.each { WebElement input ->
 			setInputValue(input, value)
 		}
@@ -652,7 +768,8 @@ class NonEmptyNavigator extends AbstractNavigator {
 		for (int i = 0; !result && i < contextElements.size(); i++) {
 			try {
 				result = closure(contextElements[i])
-			} catch (org.openqa.selenium.NoSuchElementException e) { }
+			} catch (org.openqa.selenium.NoSuchElementException e) {
+			}
 		}
 		result
 	}
@@ -667,16 +784,69 @@ class NonEmptyNavigator extends AbstractNavigator {
 						list.addAll value
 						break
 					default:
-						if (value) list << value
+						if (value) {
+							list << value
+						}
 				}
-			} catch (org.openqa.selenium.NoSuchElementException e) { }
+			} catch (org.openqa.selenium.NoSuchElementException e) {
+			}
 		}
 		list
 	}
 
-	protected Collection<WebElement> collectUntil(Collection<WebElement> elements, String selectorString) {
-		int index = elements.findIndexOf { CssSelector.matches(it, selectorString) }
+	protected Collection<WebElement> collectUntil(Collection<WebElement> elements, Closure matcher) {
+		int index = elements.findIndexOf matcher
 		index == -1 ? elements : elements[0..<index]
+	}
+
+	protected Collection<WebElement> collectUntil(Collection<WebElement> elements, String selector) {
+		collectUntil(elements) { CssSelector.matches(it, selector) }
+	}
+
+	protected Collection<WebElement> collectUntil(Collection<WebElement> elements, Map<String, Object> attributes) {
+		collectUntil(elements) { matches(it, attributes) }
+	}
+
+	protected Collection<WebElement> collectUntil(Collection<WebElement> elements, Map<String, Object> attributes, String selector) {
+		collectUntil(elements) { CssSelector.matches(it, selector) && matches(it, attributes) }
+	}
+
+	protected Collection<WebElement> collectRelativeElements(String xpath, Closure filter) {
+		collectElements {
+			def elements = it.findElements(By.xpath(xpath))
+			filter ? filter(elements) : elements
+		}
+	}
+
+	protected Collection<WebElement> collectFollowingSiblings(Closure filter) {
+		collectRelativeElements("following-sibling::*", filter)
+	}
+
+	protected Collection<WebElement> collectPreviousSiblings(Closure filter) {
+		collectRelativeElements("preceding-sibling::*", filter)
+	}
+
+	protected Collection<WebElement> collectParents(Closure filter) {
+		collectRelativeElements("ancestor::*", filter)
+	}
+
+	protected Collection<WebElement> collectChildren(Closure filter) {
+		collectRelativeElements("child::*", filter)
+	}
+
+	protected Collection<WebElement> collectSiblings(Closure filter) {
+		collectElements {
+			def elements = it.findElements(By.xpath("preceding-sibling::*")) + it.findElements(By.xpath("following-sibling::*"))
+			filter ? filter(elements) : elements
+		}
+	}
+
+	protected void ensureTagIn(List<String> allowedTags, String attribute) {
+		if (!allowedTags.contains(firstElement().tagName)) {
+
+			String joinedValidTags = allowedTags.join(', ');
+			throw new UnsupportedOperationException("Value of '$attribute' attribute can only be checked for the following elements: $joinedValidTags.")
+		}
 	}
 
 }

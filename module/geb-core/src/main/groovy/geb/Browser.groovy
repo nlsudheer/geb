@@ -28,7 +28,7 @@ import org.openqa.selenium.WebDriverException
 
 /**
  * The browser is the centre of Geb. It encapsulates a {@link org.openqa.selenium.WebDriver} implementation and references
- * a {@link geb.Page} object that provides access to the content. 
+ * a {@link geb.Page} object that provides access to the content.
  * <p>
  * Browser objects dynamically delegate all method calls and property read/writes that it doesn't implement to the current
  * page instance via {@code propertyMissing()} and {@code methodMissing()}.
@@ -155,10 +155,19 @@ class Browser {
 	/**
 	 * Changes the base url used for resolving relative urls.
 	 * <p>
-	 * This method delegates to {@link geb.Configuration#setBaseUrl}.
+	 * This method delegates to {@link geb.Configuration#setBaseUrl(def)}.
 	 */
 	void setBaseUrl(String baseUrl) {
 		config.baseUrl = baseUrl
+	}
+
+	/**
+	 * Retrieves the current url
+	 *
+	 * @see org.openqa.selenium.WebDriver#getCurrentUrl()
+	 */
+	String getCurrentUrl() {
+		driver.currentUrl
 	}
 
 	/**
@@ -228,6 +237,7 @@ class Browser {
 	 * <p>
 	 * This method performs the following:
 	 * <ul>
+	 *   <li>Check if not at an unexpected page
 	 *	 <li>For each given page type:
 	 *	 <ul>
 	 *	 <li>Create a new instance of the class (which must be {@link geb.Page} or a subclass thereof) and connect it to the browser object
@@ -245,6 +255,7 @@ class Browser {
 	void page(Class<? extends Page>[] potentialPageClasses) {
 		def potentialPageClassesClone = potentialPageClasses.toList()
 		def match = null
+		checkIfAtAnUnexpectedPage(potentialPageClasses)
 		while (match == null && !potentialPageClassesClone.empty) {
 			def potential = createPage(potentialPageClassesClone.remove(0))
 			if (potential.verifyAtSafely()) {
@@ -300,13 +311,28 @@ class Browser {
 	 *
 	 * @return true if browser is at the given page otherwise false
 	 */
-	boolean isAt(Class<? extends Page> pageType) {
+	boolean isAt(Class<? extends Page> pageType, boolean allowAtCheckWaiting = true) {
 		def page = initialisePage(createPage(pageType))
-		def isAt = page.verifyAtSafely()
+		def isAt = page.verifyAtSafely(allowAtCheckWaiting)
 		if (isAt) {
 			makeCurrentPage(page)
 		}
 		isAt
+	}
+
+	/**
+	 * Check if at one of the pages configured to be unexpected.
+	 *
+	 * @param expectedPages allows to specify which of the unexpected pages to ignore for the check
+	 * @throws UnexpectedPageException when at an unexpected page
+	 */
+	void checkIfAtAnUnexpectedPage(Class<? extends Page>[] expectedPages) {
+		def unexpectedPages = config.unexpectedPages - expectedPages.toList()
+		unexpectedPages.each {
+			if (isAt(it, false)) {
+				throw new UnexpectedPageException(it, *expectedPages)
+			}
+		}
 	}
 
 	/**
@@ -374,7 +400,12 @@ class Browser {
 	 */
 	void go(Map params, String url) {
 		def newUrl = calculateUri(url, params)
-		if (driver.currentUrl == newUrl) {
+		def currentUrl = null
+		try {
+			currentUrl = driver.currentUrl
+		} catch (NullPointerException npe) {
+		}
+		if (currentUrl == newUrl) {
 			driver.navigate().refresh()
 		} else {
 			driver.get(newUrl)
@@ -423,13 +454,12 @@ class Browser {
 		}
 	}
 
-
 	/**
 	 * Sends the browser to the given page type's url and sets the page to a new instance of the given type.
 	 *
 	 * @return a page instance of the passed page type
 	 * @see #page(geb.Page)
-	 * @see geb.Page#to(Map, Object[])
+	 * @see geb.Page#to(java.util.Map, java.lang.Object)
 	 */
 	public <T extends Page> T via(Class<T> pageType, Object[] args) {
 		via([:], pageType, *args)
@@ -440,7 +470,7 @@ class Browser {
 	 *
 	 * @return a page instance of the passed page type
 	 * @see #page(geb.Page)
-	 * @see geb.Page#to(Map, Object[])
+	 * @see geb.Page#to(java.util.Map, java.lang.Object)
 	 */
 	public <T extends Page> T via(Map params, Class<T> pageType) {
 		via(params, pageType, null)
@@ -451,7 +481,7 @@ class Browser {
 	 *
 	 * @return a page instance of the passed page type
 	 * @see #page(geb.Page)
-	 * @see geb.Page#to(Map, Object[])
+	 * @see geb.Page#to(java.util.Map, java.lang.Object)
 	 */
 	public <T extends Page> T via(Map params, Class<T> pageType, Object[] args) {
 		def page = createPage(pageType)
@@ -564,6 +594,8 @@ class Browser {
 				}
 
 				if (specification.call()) {
+					verifyAtIfPresent(options.page)
+
 					try {
 						block.call()
 					} finally {
@@ -597,9 +629,8 @@ class Browser {
 
 		switchToWindow(window)
 		try {
-			if (options.page) {
-				page(options.page)
-			}
+			verifyAtIfPresent(options.page)
+
 			block.call()
 		} finally {
 			if (options.close) {
@@ -630,9 +661,8 @@ class Browser {
 		def newWindow = executeNewWindowOpening(windowOpeningBlock, options.wait)
 		try {
 			switchToWindow(newWindow)
-			if (options.page) {
-				page(options.page)
-			}
+			verifyAtIfPresent(options.page)
+
 			block.call()
 		} finally {
 			if (!options.containsKey('close') || options.close) {
@@ -800,6 +830,17 @@ class Browser {
 			new URL(uri.toString() + joiner + queryString).toString()
 		} else {
 			uri.toString()
+		}
+	}
+
+	private void verifyAtIfPresent(Class<? extends Page> targetPage) {
+		if (targetPage) {
+			try {
+				at(targetPage)
+			}
+			catch (UndefinedAtCheckerException e) {
+				page(targetPage)
+			}
 		}
 	}
 

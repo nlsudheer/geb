@@ -1,15 +1,10 @@
 apply plugin: 'base'
 apply plugin: 'idea'
 apply from: "gradle/idea.gradle"
-apply from: "gradle/crossbrowser.gradle"
 
 buildscript {
 	repositories {
 		mavenCentral()
-	}
-
-	dependencies {
-		classpath 'org.gradle.api.plugins:gradle-clover-plugin:0.6.1'
 	}
 }
 
@@ -18,20 +13,24 @@ if (project.hasProperty("ci")) {
 		plugins.withType(ReportingBasePlugin) {
 			reporting.baseDir = rootProject.file("$rootProject.buildDir/reports/$project.name")
 		}
+		tasks.withType(Test) {
+			testLogging {
+				exceptionFormat "full"
+			}
+		}
 	}
 }
 
 allprojects { project ->
-	version = '0.9.2-SNAPSHOT'
+	version = '0.9.4-SNAPSHOT'
 	group = 'org.gebish'
 	
 	ext {
 		isSnapshot = version.endsWith("-SNAPSHOT")
 
-		seleniumVersion = "2.26.0"
-		groovyVersion = "1.8.9"
-		spockVersion = "0.7-groovy-1.8"
-		usingSauce =
+		seleniumVersion = "2.43.1"
+		groovyVersion = "2.3.6"
+		spockVersion = "0.7-groovy-2.0"
 
 		spockDependency = dependencies.create("org.spockframework:spock-core:$spockVersion") {
 			exclude module: "groovy-all"
@@ -48,20 +47,23 @@ allprojects { project ->
 
 		repositories {
 			mavenCentral()
-			mavenRepo name: "java.net", url: "http://download.java.net/maven/2"
+			maven {
+				name "java.net"
+				url "http://download.java.net/maven/2"
+			}
 		}
 
 		groovyModules = [
-			":module:geb-core", ":module:geb-core-tests", ":internal:test-support",
+			":module:geb-core", ":internal:test-support",
 			":module:geb-spock", ":module:geb-junit3", ":module:geb-junit4",
-			":module:geb-easyb", ":module:geb-testng", ":module:geb-implicit-assertions",
-			":module:geb-ast", ":module:geb-waiting"
+			":module:geb-testng", ":module:geb-implicit-assertions",
+			":module:geb-ast", ":module:geb-waiting", ":integration:geb-gradle", ":doc:site"
 		]
 
 		publishedModules = [
 			":module:geb-core", ":module:geb-implicit-assertions", ":module:geb-ast", ":module:geb-waiting",
-			":module:geb-spock", ":module:geb-junit3", ":module:geb-junit4", ":module:geb-easyb",
-			":module:geb-testng", ":doc:manual"
+			":module:geb-spock", ":module:geb-junit3", ":module:geb-junit4",
+			":module:geb-testng", ":doc:manual", ":integration:geb-gradle"
 		]
 
 		publishedGroovyModules = groovyModules.findAll { it in publishedModules }
@@ -71,25 +73,25 @@ allprojects { project ->
 	}
 }
 
+tasks.create('codenarc')
+
 subprojects {
 	if (path in groovyModules) {
 		apply plugin: "groovy"
-		apply plugin: 'idea'
-
-		if (path != ":test-support") {
-			// apply from: "file:${rootDir}/clover.gradle"
-		}
+		apply plugin: "idea"
+		apply plugin: "codenarc"
 
 		dependencies {
-			groovy groovyDependency
+			compile groovyDependency
+			codenarc 'org.codenarc:CodeNarc:0.21'
 		}
 
 		sourceCompatibility = 1.5
 		targetCompatibility = 1.5
 
 		tasks.withType(Test) {
-			testResultsDir = reporting.file("test-results/$name")
-			testReportDir = reporting.file("test-reports/$name")
+			reports.junitXml.destination = reporting.file("test-results/$name")
+			reports.html.destination = reporting.file("test-reports/$name")
 			binResultsDir = file("$buildDir/test-results-bin/$name")
 
 			ext.driver = project.properties["driver"] ?: "htmlunit"
@@ -97,6 +99,19 @@ subprojects {
 
 			systemProperty 'geb.build.reportsDir', reporting.file("geb-reports/$name")
 		}
+
+		codenarc.configFile = rootProject.file('gradle/codenarc/rulesets.groovy')
+
+		project.tasks.withType(CodeNarc) { codenarcSourceSetTask ->
+			codenarcSourceSetTask.exclude 'GebConfig*.groovy'
+			rootProject.tasks.codenarc.dependsOn codenarcSourceSetTask
+			rootProject.allprojects {
+				tasks.withType(Test) {
+					mustRunAfter codenarcSourceSetTask
+				}
+			}
+		}
+
 	}
 
 	if (path in publishedGroovyModules) {
@@ -124,14 +139,17 @@ subprojects {
 			"java.lang",
 			"java.io"
 
-		link "http://selenium.googlecode.com/svn/trunk/docs/api/java/",
+		link "http://static.javadoc.io/org.seleniumhq.selenium/selenium-api/$seleniumVersion",
 			"org.openqa.selenium"
+
+		link "http://static.javadoc.io/org.spockframework/spock-core/$spockVersion",
+			"spock.lang"
+
+		link "http://junit.org/javadoc/4.11/",
+			"org.junit"
 
 		link "http://groovy.codehaus.org/api/",
 			"groovy.lang"
-
-		link "http://www.gebish.org/manual/$version/api/geb-core",
-			"geb"
 
 		def docName = project.name == "manual" ? "Geb" : project.name
 		docTitle = "Groovy API Documentation for $docName $version"
@@ -146,11 +164,9 @@ subprojects {
 
 		signing {
 			sign configurations.archives
-			required { !isSnapshot && gradle.taskGraph.hasTask(uploadArchives) }
+			required { !isSnapshot && !project.hasProperty("ci") && gradle.taskGraph.hasTask(uploadArchives) }
 		}
 		
-		task release(dependsOn: uploadArchives)
-
 		apply from: "$rootDir/gradle/pom.gradle"
 		
 		if (path == ":doc:manual") {
@@ -178,17 +194,18 @@ subprojects {
 					}
 				}
 			}
+
+			task.onlyIf { isSnapshot || !project.hasProperty("ci") }
 		}
 	}
 }
 
-if (hasProperty('enableClover')) {
-	configure(subprojects.findAll { it.parent == project(':module') } + rootProject) {
-		apply from: rootProject.file("gradle/clover.gradle")
-	}
+task release {
+	dependsOn ':integration:geb-grails:publish',
+		{ allprojects.findAll { it.path in publishedModules }*.uploadArchives }
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion "1.6"
+	gradleVersion "1.7"
 }
 

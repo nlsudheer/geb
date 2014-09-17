@@ -46,6 +46,7 @@ task tokeniseManual(type: Copy) {
 
 configurations {
 	groovydoc
+	archives.extendsFrom delegate.default
 }
 
 dependencies {
@@ -53,10 +54,11 @@ dependencies {
 }
 
 task apiDoc(type: Groovydoc) {
-	groovyClasspath = configurations.groovydoc
+	def apiGroovyModuleProjects = apiGroovyModules.collect { project(it) }
+	groovyClasspath = files(apiGroovyModuleProjects*.configurations*.compile + [configurations.groovydoc])
 	classpath = files()
 	destinationDir = file("$buildDir/apiDoc")
-	apiGroovyModules.collect { project(it) }.each {
+	apiGroovyModuleProjects.each {
 		source it.sourceSets.main.groovy, it.sourceSets.main.java
 		classpath += it.sourceSets.main.compileClasspath + it.sourceSets.main.output
 	}
@@ -99,7 +101,7 @@ task manualZip(type: Zip) {
 }
 
 artifacts {
-	archives manualZip
+	delegate.default manualZip
 }
 
 task build(dependsOn: manualZip)

@@ -1,10 +1,24 @@
+/*
+ * Copyright 2013 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package geb.navigator
 
 import geb.Browser
 import org.openqa.selenium.WebDriver
 import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Unroll
 
 import static geb.navigator.CssSelector.Type.*
 
@@ -19,7 +33,7 @@ class CssSelectorSpec extends Specification {
 		browser.go(getClass().getResource("/test.html") as String)
 		onPage = browser.navigatorFactory.base
 	}
-	
+
 	def "selector type matching rules"() {
 		expect: selector.matches(element) == expectedMatch
 
@@ -41,7 +55,7 @@ class CssSelectorSpec extends Specification {
 		selectors[index]*.toString() == expectedSelectors
 
 		where:
-		selector                                                                                       | index | expectedSelectors
+		selector                                                                                        | index | expectedSelectors
 		"div"                                                                                           | 0     | ["div"]
 		".something"                                                                                    | 0     | [".something"]
 		"#id-with-hyphens"                                                                              | 0     | ["#id-with-hyphens"]

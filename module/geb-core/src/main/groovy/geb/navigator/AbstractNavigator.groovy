@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package geb.navigator
 
 import geb.Browser
@@ -55,16 +54,34 @@ abstract class AbstractNavigator implements Navigator {
 	}
 
 	@Override
-	Navigator find(Map<String, Object> predicates, String selector, Range<Integer> range) {
-		find(predicates, selector)[range]
+	Navigator find(Map<String, Object> predicates, int index) {
+		find(predicates, null, index..index)
 	}
 
 	@Override
-	Navigator find(Map<String, Object> predicates, String selector, Integer index) {
+	Navigator find(Map<String, Object> predicates, Range<Integer> range) {
+		find(predicates, null, range)
+	}
+
+	@Override
+	Navigator find(Map<String, Object> predicates, String selector, int index) {
 		find(predicates, selector, index..index)
 	}
 
 	@Override
+	Navigator find(String selector, Range<Integer> range) {
+		find(selector)[range]
+	}
+
+	@Override
+	Navigator find(Map<String, Object> predicates, String selector, Range<Integer> range) {
+		find(predicates, (String) selector)[range]
+	}
+
+	Navigator find(Map<String, Object> predicates, String selector, Integer index) {
+		find(predicates, selector, index..index)
+	}
+
 	Navigator find(Map<String, Object> predicates, Integer index) {
 		find(predicates, "*", index)
 	}
@@ -111,7 +128,6 @@ abstract class AbstractNavigator implements Navigator {
 		this[index]
 	}
 
-
 	Navigator add(String selector) {
 		add browser.driver.findElements(By.cssSelector(selector))
 	}
@@ -129,17 +145,6 @@ abstract class AbstractNavigator implements Navigator {
 
 	Navigator plus(Navigator navigator) {
 		add navigator.allElements()
-	}
-
-	boolean isDisabled() {
-		def value = getAttribute("disabled")
-		// Different drivers return different values here
-		(value == "disabled" || value == "true")
-	}
-
-	boolean isReadOnly() {
-		def value = getAttribute("readonly")
-		(value == "readonly" || value == "true")
 	}
 
 	String attr(String name) {
@@ -180,6 +185,10 @@ abstract class AbstractNavigator implements Navigator {
 
 	int getY() {
 		firstElement()?.location?.y ?: 0
+	}
+
+	String css(String propertyName) {
+		firstElement()?.getCssValue(propertyName)
 	}
 
 	/**

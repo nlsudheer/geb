@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package geb.transform.implicitassertions
 
+import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.runner.JUnitCore
-import org.spockframework.compiler.SpockTransform
-import spock.lang.Specification
-import static org.codehaus.groovy.control.CompilePhase.CANONICALIZATION
-import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
 import org.junit.runner.Result
 import org.junit.runner.notification.Failure
-import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
+import org.spockframework.compiler.SpockTransform
+import spock.lang.Specification
+
+import static org.codehaus.groovy.control.CompilePhase.CANONICALIZATION
+import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
 
 class SpockIntegrationSpec extends Specification {
-	
+
 	def makeSpecClass(filename = "ExampleSpec") {
 		def invoker = new TransformTestHelper() {
 			protected configure(TransformTestHelper.Transforms transforms) {
@@ -34,7 +34,7 @@ class SpockIntegrationSpec extends Specification {
 				transforms.add(new ImplicitAssertionsTransformation(), CANONICALIZATION)
 			}
 		}
-		
+
 		def file = new File(getClass().classLoader.getResource("${filename}.text").toURI())
 		invoker.parse(file)
 	}

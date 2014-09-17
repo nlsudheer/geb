@@ -23,7 +23,7 @@ All arguments are optional, meaning the following calls are all valid:
     $(0)
     $(title: "something")
 
-> There is an alias for the dollar function named “find” if a method named “$” is not to your test (a current limitation of Groovy prevents us supporting a `find()` method like `$()` though, this will be fixed in later versions).
+> There is an alias for the dollar function named “find” if a method named “$” is not to your taste (a current limitation of Groovy prevents us supporting a `find()` method like `$()` though, this will be fixed in later versions).
 
 ### CSS Selectors
 
@@ -129,7 +129,7 @@ When treating a navigator as `Iterable`, the iterated over content is always the
 
 Navigator objects have a `find` method for finding descendants, and `filter` and `not` methods for reducing the matched content.
 
-Consider the following html…
+Consider the following HTML…
 
     <div class="a">
         <p class="b">geb</p>
@@ -168,7 +168,7 @@ These methods return a new navigator object that represents the new content.
 
 Navigators also have methods for selecting content _around_ the matched content.
 
-Consider the following html…
+Consider the following HTML…
 
     <div class="a">
         <div class="b">
@@ -189,7 +189,7 @@ You can select content _around_ `p.d` by…
     $("p.c").siblings() // 'p.d' & 'p.e'
     $("div.a").children() // 'div.b' & 'div.f'
 
-Consider the following html…
+Consider the following HTML…
 
     <p class="a"></p>
     <p class="b"></p>
@@ -199,13 +199,15 @@ The following code will select `p.b` & `p.c`…
 
     $("p").next()
 
-The `previous`, `prevAll`, `next`, `nextAll`, `parent`, `parents`, `closest`, `siblings` and `children` methods can also take css selectors and attribute matchers.
+The `previous`, `prevAll`, `next`, `nextAll`, `parent`, `parents`, `closest`, `siblings` and `children` methods can also take CSS selectors and attribute matchers.
 
-Using the same html, the following code will select `p.c`…
+Using the same html, the following examples will select `p.c`…
 
     $("p").next(".c")
+    $("p").next(class: "c")
+    $("p").next("p", class: "c")
 
-Likewise, consider the following html…
+Likewise, consider the following HTML…
 
     <div class="a">
         <div class="b">
@@ -213,30 +215,36 @@ Likewise, consider the following html…
         </div>
     </div>
 
-The following code will select `div.b`…
+The following examples will select `div.b`…
 
     $("p").parent(".b")
+    $("p").parent(class: "b")
+    $("p").parent("div", class: "b")
 
-The `closest` method is a special case in that it will select the first ancestors of the current elements that match a selector. There is no no-argument version of the `closest` method. For example, this will select `div.a`…
+The `closest` method is a special case in that it will select the first ancestors of the current elements that match a selector. There is no no-argument version of the `closest` method. For example, these will select `div.a`…
 
     $("p").closest(".a")
+    $("p").closest(class: "a")
+    $("p").closest("div", class: "a")
 
 These methods do not take indexes as they automatically select the first matching content. To select multiple elements you can use `prevAll`, `nextAll` and `parents` all of which have no-argument versions and versions that filter by a selector.
 
-The `nextUntil`, `prevUntil` and `parentsUntil` methods return all nodes along the relevant axis _until_ the first one that matches a selector. Consider the following markup:
+The `nextUntil`, `prevUntil` and `parentsUntil` methods return all nodes along the relevant axis _until_ the first one that matches a selector or attributes. Consider the following markup:
 
     <div class="a"></div>
     <div class="b"></div>
     <div class="c"></div>
     <div class="d"></div>
 
-The following code will select `div.b` and `div.c`:
+The following examples will select `div.b` and `div.c`:
 
     $(".a").nextUntil(".d")
+    $(".a").nextUntil(class: "d")
+    $(".a").nextUntil("div", class: "d")
 
 ## Composition
 
-It is also to compose navigator objects from other navigator objects, for situations where you can't express a content set in one query. To do this, simply call the $ function with the navigators to use…
+It is also possible to compose navigator objects from other navigator objects, for situations where you can't express a content set in one query. To do this, simply call the $ function with the navigators to use…
 
     $($("div.a"), $("div.d"))
 
@@ -266,7 +274,7 @@ For example…
 
 Would click the “`input.loginButton`” element, then effectively call `browser.page(LoginPage)` and verify that the browser is at the expected page.
 
-All of the page classes passed in when using the list variant have to have an “at” checker defined otherwise an `UndefinedAtCheckerException` will be thrown.
+All of the page classes passed in when using the list variant have to have an “at” checker defined, otherwise an `UndefinedAtCheckerException` will be thrown.
 
 ## Determining Visibility
 
@@ -314,9 +322,23 @@ To obtain information about all matched content, you use the Groovy _spread oper
     $("p")*.@title == ["a", "b", "c"]
     $("p")*.classes() == [["a", "para"], ["b", "para"], ["c", "para"]]
 
+## Css properties
+
+Css properties of a navigator can be accessed using the `css()` method.
+
+Consider the following HTML…
+
+    <div style="float: left">text</div>
+
+You can obtain value of the `float` css property in the following way…
+
+    $("div").css("float") == "left"
+
+> There are some limitations when it comes to retrieving css properties of `Navigator` objects. Color values should be returned as rgba strings, so, for example if the `background-color` property is set as `green` in the HTML source, the returned value will be `rgba(0, 255, 0, 1)`. Note that shorthand CSS properties (e.g. `background`, `font`, `border`, `border-top`, `margin`, `margin-top`, `padding`, `padding-top`, `list-style`, `outline`, `pause`, `cue`) are not returned, in accordance with the DOM CSS2 specification - you should directly access the longhand properties (e.g. `background-color`) to access the desired values.
+
 ## Sending keystrokes
 
-Keystrokes can be sent to any content via the leftShift operator, which is a shortcut for the [`sendKeys()`](http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/WebElement.html#sendKeys(java.lang.CharSequence...\)) method of WebDriver.
+Keystrokes can be sent to any content via the leftShift operator, which is a shortcut for the [`sendKeys()`](http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/WebElement.html#sendKeys\(java.lang.CharSequence...\)) method of WebDriver.
 
     $("div") << "abc"
 
@@ -324,7 +346,7 @@ How content responds to the keystrokes depends on what the content is.
 
 ### Non characters (e.g. delete key)
 
-It is possible to send non textual characters to content by using the WebDriver [Keys](http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Keys.html "Keys") enumeration…
+It is possible to send non-textual characters to content by using the WebDriver [Keys](http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Keys.html "Keys") enumeration…
 
     import org.openqa.selenium.Keys
     
@@ -372,34 +394,36 @@ Which is literally a shortcut for…
 
 > In the above and below examples with form controls we are using code like `$("form").someInput` where we could be using just `someInput` as long as there is only one control with the *name* `someInput` on the page. In the examples we are using `$("form").someInput` to hopefully be clearer.
 
-If your content definition (either a page or a module) describes content which is an `input`, `select` or `textarea` you can access and set its value the same way as described above for forms. Given a page and module definitions for the above mentioned html:
+If your content definition (either a page or a module) describes content which is an `input`, `select` or `textarea`, you can access and set its value the same way as described above for forms. Given a page and module definitions for the above mentioned HTML:
 
-	class ShortcutModule extends Module {
-		static content = {
-			geb { $('form').geb() }
-		}
-	}
+    class ShortcutModule extends Module {
+        static content = {
+            geb { $('form').geb() }
+        }
+    }
 
-	static content = {
-		geb { $('form').geb() }
-		shortcutModule { module ShortcutModule }
-	}
+    static content = {
+        geb { $('form').geb() }
+        shortcutModule { module ShortcutModule }
+    }
 
 The following will pass:
 
-	assert geb == "testing"
+    assert geb == "testing"
     geb = "goodness"
     assert geb == "goodness"
 
 As well as:
 
-	assert shortcutModule.geb == "testing"
+    assert shortcutModule.geb == "testing"
     shortcutModule.geb = "goodness"
     assert shortcutModule.geb == "goodness"
 
-> The following examples describe usage of form controls only using code like `$("form").someInput`. Given a content definition `myContent { $("form").someInput }` you can substitute `$("form").someInput` in the examples with `myContent`.
+> The following examples describe usage of form controls only using code like `$("form").someInput`. Given a content definition `myContent { $("form").someInput }`, you can substitute `$("form").someInput` in the examples with `myContent`.
 
 ### Setting Values
+
+> Trying to set a value on an element which is not one of `input`, `select` or `textarea` will cause an `UnableToSetElementException` to be thrown.
 
 #### select
 
@@ -501,7 +525,7 @@ It is also possible to append text by using the send keys shorthand…
     $("form").language() << "ovy"
     assert $("form").language == "groovy"
 
-Which an also be used for non character keys…
+Which an also be used for non-character keys…
 
     <input name="postcode" />
 
@@ -511,7 +535,7 @@ Which an also be used for non character keys…
     $("form").postcode() << Keys.BACK_SPACE
     assert $("form").postcode == "1234"
 
-> Note that WebDriver has some issues with textareas and surrounding whitespace. Namely, some drivers implicit trim whitespace from the beginning and end of the value. You can track this issue here: http://code.google.com/p/selenium/issues/detail?id=2131
+> Note that WebDriver has some issues with textareas and surrounding whitespace. Namely, some drivers implicitly trim whitespace from the beginning and end of the value. You can track this issue here: http://code.google.com/p/selenium/issues/detail?id=2131
 
 #### file upload
 
@@ -590,7 +614,7 @@ Drag-and-dropping can also be accomplished using the `dragAndDropBy` convenience
         dragAndDropBy($('#element'), 400, -150)
     }
 
-In this particular example the element will be clicked then dragged 400 pixels to the right and 150 pixels upward before being released.
+In this particular example, the element will be clicked then dragged 400 pixels to the right and 150 pixels upward before being released.
 
 > Note that moving to arbitrary locations with the mouse is currently not supported by the HTMLUnit driver, but moving directly to elements is.
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
 package geb
 
 import geb.buildadapter.BuildAdapterFactory
+import geb.error.UnableToLoadException
 
 /**
  * Manages the process of creating {@link geb.Configuration} objects, which control the runtime behaviour of Geb.
@@ -26,7 +27,7 @@ import geb.buildadapter.BuildAdapterFactory
  * with that.
  * <p>
  * Another avenue for custom configuration is usage of the {@link geb.BuildAdapter build adapter}. The build adapter that
- * will be used with any loaded configurations will be what is provided by {@link #createBuildAdapter()}
+ * will be used with any loaded configurations will be what is provided by {@link geb.ConfigurationLoader#createBuildAdapter(groovy.lang.GroovyClassLoader)}.
  *
  * @see geb.Configuration
  * @see geb.Browser
@@ -41,7 +42,7 @@ class ConfigurationLoader {
 	/**
 	 * Configures the loader using the defaults.
 	 *
-	 * @see ConfigurationLoader(ClassLoader, String, Properties)
+	 * @see ConfigurationLoader ( ClassLoader , String , Properties )
 	 */
 	ConfigurationLoader() {
 		this(null, null, null)
@@ -50,7 +51,7 @@ class ConfigurationLoader {
 	/**
 	 * Configures the loader with the given environment for parsing config scripts, and defaults for everything else.
 	 *
-	 * @see ConfigurationLoader(String, Properties, ClassLoader)
+	 * @see ConfigurationLoader ( String , Properties , ClassLoader )
 	 */
 	ConfigurationLoader(String environment) {
 		this(environment, null, null)
@@ -61,7 +62,8 @@ class ConfigurationLoader {
 	 * <p>
 	 * If any of the parameters are {@code null}, the appropriate {@code getDefault«something»()} method will be used to supply the value.
 	 *
-	 * @param classLoader The loader to use to find classpath resources and to {@link #createBuildAdapter() load the build adapter}
+	 * @param classLoader The loader to use to find classpath resources and to
+	 * {@link #createBuildAdapter(groovy.lang.GroovyClassLoader) load the build adapter}
 	 * @param environment If loading a config script, the environment to load it with
 	 * @param properties The properties given to created {@link geb.Configuration} objects
 	 * @see #getDefaultEnvironment()
@@ -87,7 +89,7 @@ class ConfigurationLoader {
 	 * <p>
 	 * Uses {@link #getDefaultConfigScriptResourcePath()} for the path and {@link #getDefaultConfigClassName()} for the class name.
 	 *
-	 * @throws geb.ConfigurationLoader.UnableToLoadException if the config script or class exists but could not be read or parsed.
+	 * @throws geb.error.UnableToLoadException if the config script or class exists but could not be read or parsed.
 	 * @see #getConf(String)
 	 * @see #getConfFromClass(String)
 	 */
@@ -98,14 +100,14 @@ class ConfigurationLoader {
 	/**
 	 * <p>Creates a config backed by the classpath config script resource at the given path.</p>
 	 *
-	 * <p>The resource is first searched for using the special class loader (thread context loader by default), and then the class loader of this class if it wasn't found. 
+	 * <p>The resource is first searched for using the special class loader (thread context loader by default), and then the class loader of this class if it wasn't found.
 	 * If no classpath resource can be found at the given path, an empty config object will be used with the class loader of this class.</p>
 	 *
 	 * <p>The class loader that is used is then propagated to the created configuration object. This means that if it is the special loader it <strong>must</strong> have
 	 * the same copy of the Geb classes as this class loader and any other classes Geb depends on.</p>
 	 *
 	 * @param configFileResourcePath the classpath relative path to the config script to use (if {@code null}, {@link #getDefaultConfigScriptResourcePath() default} will be used).
-	 * @throws geb.ConfigurationLoader.UnableToLoadException if the config script exists but could not be read or parsed.
+	 * @throws geb.error.UnableToLoadException if the config script exists but could not be read or parsed.
 	 * @see #getConf(URL, GroovyClassLoader)
 	 * @see #getConfFromClass(String)
 	 */
@@ -127,7 +129,7 @@ class ConfigurationLoader {
 	 * the same copy of the Geb classes as this class loader and any other classes Geb depends on.</p>
 	 *
 	 * @param configFileResourcePath the classpath relative path to the config script to use (if {@code null}, {@link #getDefaultConfigScriptResourcePath() default} will be used).
-	 * @throws geb.ConfigurationLoader.UnableToLoadException if the config script exists but could not be read or parsed.
+	 * @throws geb.error.UnableToLoadException if the config script exists but could not be read or parsed.
 	 * @see #getConf(URL, GroovyClassLoader)
 	 * @see #getConf(String)
 	 */
@@ -151,7 +153,7 @@ class ConfigurationLoader {
 	 *
 	 * @param configLocation The absolute URL to the config script to use for the config (cannot be {@code null})
 	 * @param classLoader The class loader to load the config script with (must be the same or a child of the class loader of this class)
-	 * @throws geb.ConfigurationLoader.UnableToLoadException if the config script exists but could not be read or parsed.
+	 * @throws geb.error.UnableToLoadException if the config script exists but could not be read or parsed.
 	 */
 	Configuration getConf(URL configLocation, GroovyClassLoader classLoader) throws UnableToLoadException {
 		if (configLocation == null) {
@@ -171,7 +173,7 @@ class ConfigurationLoader {
 	 * the same copy of the Geb classes as this class loader and any other classes Geb depends on.</p>
 	 *
 	 * @param configFileResourcePath the classpath relative path to the config script to use (if {@code null}, {@link #getDefaultConfigScriptResourcePath() default} will be used).
-	 * @throws geb.ConfigurationLoader.UnableToLoadException if the config script exists but could not be read or parsed.
+	 * @throws geb.error.UnableToLoadException if the config script exists but could not be read or parsed.
 	 * @see #getConf(Class, GroovyClassLoader)
 	 * @see #getConf(String)
 	 */
@@ -189,7 +191,7 @@ class ConfigurationLoader {
 	 * the same copy of the Geb classes as this class loader and any other classes Geb depends on.</p>
 	 *
 	 * @param configFileResourcePath the classpath relative path to the config script to use (if {@code null}, {@link #getDefaultConfigScriptResourcePath() default} will be used).
-	 * @throws geb.ConfigurationLoader.UnableToLoadException if the config script exists but could not be read or parsed.
+	 * @throws geb.error.UnableToLoadException if the config script exists but could not be read or parsed.
 	 * @see #getConfFromClass(String)
 	 * @see #getConf(Class, GroovyClassLoader)
 	 */
@@ -220,7 +222,7 @@ class ConfigurationLoader {
 	 *
 	 * @param configClass Class that contains configuration
 	 * @param classLoader The class loader to load the config script with (must be the same or a child of the class loader of this class)
-	 * @throws geb.ConfigurationLoader.UnableToLoadException when config class cannot be read
+	 * @throws geb.error.UnableToLoadException when config class cannot be read
 	 */
 	Configuration getConf(Class configClass, GroovyClassLoader classLoader) throws UnableToLoadException {
 		createConf(loadRawConfig(configClass), classLoader)
@@ -228,7 +230,7 @@ class ConfigurationLoader {
 
 	/**
 	 * This implementation returns a new {@link groovy.lang.GroovyClassLoader} which uses the
-	 * {@code Thread.currentThread().contextClassLoader} as the parent.
+	 * {@code Thread.currentThread ( ) .contextClassLoader} as the parent.
 	 */
 	protected GroovyClassLoader getDefaultSpecialClassLoader() {
 		new GroovyClassLoader()
@@ -262,20 +264,10 @@ class ConfigurationLoader {
 		'GebConfig'
 	}
 
-	static class UnableToLoadException extends geb.error.GebException {
-		UnableToLoadException(URL configLocation, String environment, Throwable cause) {
-			super("Unable to load configuration @ '$configLocation' (with environment: $environment)", cause)
-		}
-
-		UnableToLoadException(Class configClass, String environment, Throwable cause) {
-			super("Unable to load configuration from class '$configClass' (with environment: $environment)", cause)
-		}
-	}
-
 	/**
 	 * Reads the config scripts at {@code configLocation} with the {@link #createSlurper()}
 	 *
-	 * @throws geb.ConfigurationLoader.UnableToLoadException if the config script could not be read.
+	 * @throws geb.error.UnableToLoadException if the config script could not be read.
 	 */
 	protected ConfigObject loadRawConfig(URL configLocation, GroovyClassLoader classLoader) throws UnableToLoadException {
 		loadRawConfig(createSlurper(classLoader), configLocation)
@@ -284,7 +276,7 @@ class ConfigurationLoader {
 	/**
 	 * Reads the config class with the {@link #createSlurper()}
 	 *
-	 * @throws geb.ConfigurationLoader.UnableToLoadException if the config class could not be read.
+	 * @throws geb.error.UnableToLoadException if the config class could not be read.
 	 */
 	protected ConfigObject loadRawConfig(Class configClass) throws UnableToLoadException {
 		loadRawConfig(createSlurper(), configClass)
@@ -316,18 +308,18 @@ class ConfigurationLoader {
 	}
 
 	/**
-	 * Creates a new {@link geb.Configuration} backed by {@code rawConfig} with the {@code properties} and {@code classLoader}
-	 * we were constructed with, and a {@link geb.BuildAdapter build adapter}.
+	 * Creates a new {@link geb.Configuration} backed by {@code rawConfig} with the {@code properties}
+	 * we were constructed with, the {@code classLoader} passed in and a {@link geb.BuildAdapter build adapter}.
 	 *
-	 * @see geb.Configuration#Configuration
+	 * @see geb.Configuration#Configuration(groovy.util.ConfigObject, java.util.Properties, geb.BuildAdapter, java.lang.ClassLoader)
 	 */
 	protected createConf(ConfigObject rawConfig, GroovyClassLoader classLoader) {
 		new Configuration(rawConfig, properties, createBuildAdapter(classLoader), classLoader)
 	}
 
 	/**
-	 * Uses the {@link geb.buildadapter.BuildAdapterFactory#getBuildAdapter(ClassLoader) build adapter factory} to load
-	 * a build adapter with the {@code classLoader} we were constructed with.
+	 * Uses the {@link geb.buildadapter.BuildAdapterFactory#getBuildAdapter(java.lang.ClassLoader) build adapter factory} to load
+	 * a build adapter with the {@code classLoader} passed in.
 	 */
 	protected BuildAdapter createBuildAdapter(GroovyClassLoader classLoader) {
 		BuildAdapterFactory.getBuildAdapter(classLoader)

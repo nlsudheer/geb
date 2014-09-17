@@ -1,3 +1,18 @@
+/*
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package geb.transform.implicitassertions
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport
@@ -46,7 +61,7 @@ class ImplicitAssertionsTransformationVisitor extends ClassCodeVisitorSupport {
 					transformEachStatement(arguments.expressions[-1])
 				}
 			} else {
-				compensateForSpockIfNecessary(expression)	
+				compensateForSpockIfNecessary(expression)
 			}
 		}
 	}
@@ -55,34 +70,33 @@ class ImplicitAssertionsTransformationVisitor extends ClassCodeVisitorSupport {
 		if (expression.objectExpression in ClassExpression && expression.method in ConstantExpression) {
 			ClassExpression classExpression = expression.objectExpression as ClassExpression
 			ConstantExpression method = expression.method as ConstantExpression
-			
+
 			if (classExpression.type.name == "org.spockframework.runtime.SpockRuntime" && method.value == "verifyMethodCondition") {
 				if (expression.arguments in ArgumentListExpression) {
 					ArgumentListExpression arguments = expression.arguments as ArgumentListExpression
 					List<Expression> argumentExpressions = arguments.expressions
-					
+
 					if (argumentExpressions.size() >= 8) {
 						Expression verifyMethodConditionMethodArg = argumentExpressions.get(6)
 						String methodName = getConstantValueOfType(extractRecordedValueExpression(verifyMethodConditionMethodArg), String)
-						
+
 						if (methodName) {
 							Expression verifyMethodConditionArgsArgument = argumentExpressions.get(7)
 							if (verifyMethodConditionArgsArgument in ArrayExpression) {
-								 
-		                        List<Expression> values = (verifyMethodConditionArgsArgument as ArrayExpression).expressions.collect { Expression argumentExpression ->
-									extractRecordedValueExpression(argumentExpression)									
-								} 
-								
+
+								List<Expression> values = (verifyMethodConditionArgsArgument as ArrayExpression).expressions.collect { Expression argumentExpression ->
+									extractRecordedValueExpression(argumentExpression)
+								}
+
 								visitSpockValueRecordMethodCall(methodName, values)
 							}
-						}	
+						}
 					}
 				}
 			}
 		}
 	}
-	
-	
+
 	Expression extractRecordedValueExpression(Expression valueRecordExpression) {
 		if (valueRecordExpression in MethodCallExpression) {
 			MethodCallExpression methodCallExpression = valueRecordExpression as MethodCallExpression
@@ -95,13 +109,13 @@ class ImplicitAssertionsTransformationVisitor extends ClassCodeVisitorSupport {
 				}
 			}
 		}
-		
+
 		null
 	}
-	
+
 	def getConstantValueOfType(Expression expression, Class type) {
 		if (expression != null && expression in ConstantExpression) {
-			Object value = ((ConstantExpression)expression).value
+			Object value = ((ConstantExpression) expression).value
 			type.isInstance(value) ? value : null
 		} else {
 			null
@@ -110,15 +124,15 @@ class ImplicitAssertionsTransformationVisitor extends ClassCodeVisitorSupport {
 
 	void visitSpockValueRecordMethodCall(String name, List<Expression> arguments) {
 		if (name == "waitFor") {
-			if (!arguments.empty) { 
+			if (!arguments.empty) {
 				Expression lastArg = arguments.last()
 				if (lastArg instanceof ClosureExpression) {
 					transformEachStatement(lastArg as ClosureExpression)
 				}
 			}
-		}	
+		}
 	}
-	
+
 	@Override
 	protected SourceUnit getSourceUnit() {
 		sourceUnit
@@ -262,7 +276,5 @@ class ImplicitAssertionsTransformationVisitor extends ClassCodeVisitorSupport {
 			new ArrayExpression(ClassHelper.OBJECT_TYPE, argumentList);
 		}
 	}
-
-
 }
 

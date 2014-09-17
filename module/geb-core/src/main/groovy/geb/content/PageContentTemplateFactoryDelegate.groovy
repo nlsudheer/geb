@@ -17,40 +17,46 @@ package geb.content
 import geb.Module
 import geb.error.InvalidPageContent
 import geb.navigator.Navigator
+import geb.navigator.factory.NavigatorFactory
+import org.openqa.selenium.WebElement
 
 class PageContentTemplateFactoryDelegate {
 
 	static DISALLOWED_MODULE_PARAMS = ['_template', '_navigator', '_args']
-	
-	private template
-	private args
-	
+
+	private PageContentTemplate template
+	private Object[] args
+
+	@Delegate
+	private final NavigableSupport navigableSupport
+
 	PageContentTemplateFactoryDelegate(PageContentTemplate template, Object[] args) {
 		this.template = template
+		this.navigableSupport = new NavigableSupport(template.navigatorFactory)
 		this.args = args
 	}
-	
+
 	def methodMissing(String name, args) {
-		template.owner."$name"(*args)
+		template.owner."$name"(* args)
 	}
-	
+
 	def propertyMissing(String name) {
 		template.owner."$name"
 	}
 
-	def module(Class moduleClass) {
+	def module(Class<? extends Module> moduleClass) {
 		module(null, moduleClass, null)
 	}
 
-	def module(Map params, Class moduleClass) {
+	def module(Map params, Class<? extends Module> moduleClass) {
 		module(params, moduleClass, null)
 	}
 
-	def module(Class moduleClass, container) {
+	def module(Class<? extends Module> moduleClass, container) {
 		module(null, moduleClass, container)
 	}
 
-	def module(Map params, Class moduleClass, base) {
+	def module(Map params, Class<? extends Module> moduleClass, Navigator base) {
 		if (params == null) {
 			params = [:]
 		}
@@ -64,27 +70,18 @@ class PageContentTemplateFactoryDelegate {
 			def disallowed = DISALLOWED_MODULE_PARAMS.join(', ')
 			throw new InvalidPageContent("params for module $moduleClass with name ${template.name} contains one or more disallowed params (${disallowed})")
 		}
-		
-		def startingBase 
-		if (base == null) {
-			startingBase = template.owner.$()
-		} else if (base instanceof Navigator) {
-			startingBase = base
-		} else if (base instanceof Navigable) {
-			startingBase = base.$()
-		} else {
-			throw new InvalidPageContent("The base '$base' given to module $moduleClass for template $template is not page content")
-		}
-		
-		Navigator moduleBase = ModuleBaseCalculator.calculate(moduleClass, startingBase, params)
-		
+
+		def baseNavigatorFactory = base != null ? template.navigatorFactory.relativeTo(base) : template.navigatorFactory
+
+		NavigatorFactory moduleBaseNavigatorFactory = ModuleBaseCalculator.calculate(moduleClass, baseNavigatorFactory, params)
+
 		def module = moduleClass.newInstance()
-		module.init(template, moduleBase, *args)
+		module.init(template, moduleBaseNavigatorFactory, * args)
 		params.each { name, value ->
 			// TODO - catch MPE and provide better error message
 			module."$name" = value
 		}
-		
+
 		module
 	}
 
@@ -103,5 +100,61 @@ class PageContentTemplateFactoryDelegate {
 
 	def moduleList(Class moduleClass, Navigator navigator, index = null) {
 		moduleList(null, moduleClass, navigator, index)
+	}
+
+	Navigator $() {
+		navigableSupport.$()
+	}
+
+	Navigator $(int index) {
+		navigableSupport.$(index)
+	}
+
+	Navigator $(Range<Integer> range) {
+		navigableSupport.$(range)
+	}
+
+	Navigator $(String selector) {
+		navigableSupport.$(selector)
+	}
+
+	Navigator $(String selector, int index) {
+		navigableSupport.$(selector, index)
+	}
+
+	Navigator $(String selector, Range<Integer> range) {
+		navigableSupport.$(selector, range)
+	}
+
+	Navigator $(Map<String, Object> attributes) {
+		navigableSupport.$(attributes)
+	}
+
+	Navigator $(Map<String, Object> attributes, int index) {
+		navigableSupport.$(attributes, index)
+	}
+
+	Navigator $(Map<String, Object> attributes, Range<Integer> range) {
+		navigableSupport.$(attributes, range)
+	}
+
+	Navigator $(Map<String, Object> attributes, String selector) {
+		navigableSupport.$(attributes, selector)
+	}
+
+	Navigator $(Map<String, Object> attributes, String selector, int index) {
+		navigableSupport.$(attributes, selector, index)
+	}
+
+	Navigator $(Map<String, Object> attributes, String selector, Range<Integer> range) {
+		navigableSupport.$(attributes, selector, range)
+	}
+
+	Navigator $(Navigator[] navigators) {
+		navigableSupport.$(navigators)
+	}
+
+	Navigator $(WebElement[] elements) {
+		navigableSupport.$(elements)
 	}
 }

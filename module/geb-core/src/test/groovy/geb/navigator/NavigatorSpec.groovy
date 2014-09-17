@@ -1,12 +1,23 @@
+/*
+ * Copyright 2013 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package geb.navigator
 
 import geb.Page
-import geb.PageWithoutAtChecker
-import geb.error.UndefinedAtCheckerException
 import geb.test.CrossBrowser
 import geb.test.GebSpecWithServer
-import org.openqa.selenium.WebElement
-import spock.lang.Issue
 import spock.lang.Unroll
 
 @Unroll
@@ -40,21 +51,6 @@ class NavigatorSpec extends GebSpecWithServer {
 		$("#multi").attr("multiple") == "true"
 		$("#multi").@multiple == "true"
 		$("#multi").attr('multiple') == "true"
-	}
-
-	def getElement() {
-		given:
-		html {
-			div(id: "a")
-			div(id: "b")
-			div(id: "c")
-		}
-
-		expect:
-		$("div").getElement(0).getAttribute("id") == "a"
-		$("div").getElement(1).getAttribute("id") == "b"
-		$("foo").getElement(0) == null
-		$("foo").getElement(10) == null
 	}
 
 	def add() {
@@ -236,18 +232,6 @@ class NavigatorSpec extends GebSpecWithServer {
 		$("foo").first()*.@id == []
 	}
 
-	def firstElement() {
-		given:
-		html {
-			div(id: "a", 'class': "a1 a2 a3")
-			div(id: "b", 'class': "b1")
-		}
-
-		expect:
-		$("div").firstElement().getAttribute("id") == "a"
-		$("foo").firstElement() == null
-	}
-
 	def last() {
 		given:
 		html {
@@ -258,18 +242,6 @@ class NavigatorSpec extends GebSpecWithServer {
 		expect:
 		$("div").last()*.@id == ["b"]
 		$("foo").last()*.@id == []
-	}
-
-	def lastElement() {
-		given:
-		html {
-			div(id: "a", 'class': "a1 a2 a3")
-			div(id: "b", 'class': "b1")
-		}
-
-		expect:
-		$("div").lastElement().getAttribute("id") == "b"
-		$("foo").lastElement() == null
 	}
 
 	def verifyNotEmpty() {
@@ -292,8 +264,8 @@ class NavigatorSpec extends GebSpecWithServer {
 	def displayed() {
 		given:
 		html {
-			div(id: "a")
-			div(id: "b", style: "display: none;")
+			div(id: "a", "a")
+			div(id: "b", style: "display: none;", "b")
 		}
 
 		expect:
@@ -302,67 +274,119 @@ class NavigatorSpec extends GebSpecWithServer {
 		!$("foo").displayed
 	}
 
-	def "click is called only on the first element of the navigator"() {
+	def disabled() {
 		given:
-		def element1 = Mock(WebElement)
-		def element2 = Mock(WebElement)
-		def navigator = new NonEmptyNavigator(browser, [element1, element2])
-
-		when: navigator.click()
-
-		then:
-		1 * element1.click()
-		0 * element2.click()
-		0 * _
-	}
-
-	@Issue('GEB-160')
-	def 'click call returns receiver for parameters: #clickParams'() {
-		given:
-		html { button("") }
-
-		when:
-		def navigator = $('button')
-
-		then:
-		navigator.click(* clickParams).is(navigator)
-
-		where:
-		clickParams << [[], [Page], [[PageWithAtChecker, PageWithAtChecker]]]
-	}
-
-	def 'click can be used with pages without at checker'() {
-		given:
-		html { div() }
-
-		when:
-		$('div').click(Page)
-
-		then:
-		notThrown(UndefinedAtCheckerException)
-	}
-
-	def 'click fails when used with a list of pages, one of which does not have an at checker'() {
-		given:
-		html { div() }
-
-		when:
-		$('div').click([PageWithoutAtChecker, PageWithAtChecker])
-
-		then:
-		thrown(UndefinedAtCheckerException)
-	}
-
-	def allElements() {
-		when:
 		html {
-			div(id: "a")
-			div(id: "b")
-			div(id: "c")
+			input(id: "noDisabledAttr")
+			input(id: "disabledAttr", disabled: 'disabled')
+			input(id: "disabledAttr2", disabled: 'xyz')
+		}
+
+		expect:
+		$("#noDisabledAttr").enabled
+		!$("#noDisabledAttr").disabled
+		$("#disabledAttr").disabled
+		!$("#disabledAttr").enabled
+		$("#disabledAttr2").disabled
+		!$("#disabledAttr2").enabled
+	}
+
+	def 'disabled/enabled can be called on selected tags'() {
+		given:
+		html {
+			button(id: 'button', 'button')
+			input(id: 'input')
+			select(id: 'select') {
+				option(id: 'option')
+			}
+			textarea(id: 'textarea')
+		}
+
+		when:
+		['button', 'input', 'option', 'select', 'textarea'].each {
+			$("#$it").enabled
+			$("#$it").disabled
 		}
 
 		then:
-		$("div").allElements()*.getAttribute("id") == ["a", "b", "c"]
+		notThrown(UnsupportedOperationException)
+	}
+
+	def 'calling enabled/disabled on a not allowed element'() {
+		given:
+		html {
+			div('div')
+		}
+
+		when:
+		$('div').disabled
+
+		then:
+		UnsupportedOperationException e1 = thrown()
+		e1.message == "Value of 'disabled' attribute can only be checked for the following elements: button, input, option, select, textarea."
+
+		when:
+		$("div").enabled
+
+		then:
+		UnsupportedOperationException e2 = thrown()
+		e2.message == "Value of 'disabled' attribute can only be checked for the following elements: button, input, option, select, textarea."
+	}
+
+	def readOnly() {
+		given:
+		html {
+			input(id: "noReadonlyAttr")
+			input(id: "readonlyAttr", readonly: 'readonly')
+			input(id: "readonlyAttr2", readonly: 'xyz')
+		}
+
+		expect:
+		$("#noReadonlyAttr").editable
+		!$("#noReadonlyAttr").readOnly
+		$("#readonlyAttr").readOnly
+		!$("#readonlyAttr").editable
+		$("#readonlyAttr2").readOnly
+		!$("#readonlyAttr2").editable
+
+	}
+
+	def 'readOnly/editable can be called on selected tags'() {
+		given:
+		html {
+			input()
+			textarea()
+		}
+
+		when:
+		['input', 'textarea'].each {
+			$(it).enabled
+			$(it).disabled
+		}
+
+		then:
+		notThrown(UnsupportedOperationException)
+	}
+
+	def 'calling readOnly/editable on a not allowed element'() {
+		given:
+		html {
+			div('div')
+		}
+
+		when:
+		$('div').readOnly
+
+		then:
+		UnsupportedOperationException e1 = thrown()
+		e1.message == "Value of 'readonly' attribute can only be checked for the following elements: input, textarea."
+
+		when:
+		$("div").editable
+
+		then:
+		UnsupportedOperationException e2 = thrown()
+		e2.message == "Value of 'readonly' attribute can only be checked for the following elements: input, textarea."
 	}
 
 	def eq() {
@@ -406,7 +430,8 @@ class NavigatorSpec extends GebSpecWithServer {
 
 	def "cannot read or set value of non existent control"() {
 		given:
-		html {}
+		html {
+		}
 
 		when:
 		$().someFieldThatDoesNotExist
@@ -419,6 +444,22 @@ class NavigatorSpec extends GebSpecWithServer {
 
 		then:
 		thrown(MissingPropertyException)
+	}
+
+	def ranges() {
+		when:
+		html {
+			p(a: 1, "1")
+			p(a: 2, "2")
+			p(a: 3, "3")
+			p(a: 4, "4")
+		}
+
+		then:
+		$("p", 1..2)*.text() == ["2", "3"]
+		$(a: ~/\d+/, 1..2)*.text() == ["2", "3"]
+		$("p")[1..2]*.text() == ["2", "3"]
+		$("p", a: ~/[234]/, 1..2)*.text() == ["3", "4"]
 	}
 
 }

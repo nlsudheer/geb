@@ -1,6 +1,6 @@
 # Scripts and Binding
 
-Geb supports being used in scripting environments via both the `Browser.drive()` method, and by using the [`geb.binding.BindingUpdater`][bindingupdater-api] class that populates and updates a [`groovy.lang.Binding`][groovy-binding] that can be used with scripts. This is also the same mechanism that is used by the [EasyB Geb plugin](testing.html#easyb) and can be used with [Cuke4Duke](testing.html#cucumber_cuke4duke) (Cucumber for the JVM).
+Geb supports being used in scripting environments via both the `Browser.drive()` method, and by using the [`geb.binding.BindingUpdater`][bindingupdater-api] class that populates and updates a [`groovy.lang.Binding`][groovy-binding] that can be used with scripts. This is also the same mechanism that can be used with [Cucumber-JVM](testing.html#cucumber_cucumber_jvm).
 
 ## Setup
 
@@ -37,7 +37,7 @@ For example…
 	js.someJavaScriptFunction()
 	downloadText($("a.csvFile"))
 
-In a managed binding, all of the methods/properties that you can usually call in the [`Browser.drive()`](#the_drive_method) method are available. This includes the `$()` function.
+In a managed binding, all of the methods/properties that you can usually call in the [`Browser.drive()`](browser.html#the_drive_method) method are available. This includes the `$()` function.
 
 The following methods are available:
 
@@ -59,7 +59,7 @@ The following methods are available:
 * reportGroup
 * cleanReportGroupDir
 
-The javascript interface property [`js`](javascript.html#the_js_object) is also available. The browser object itself is available as the `browser` property.
+The JavaScript interface property [`js`](javascript.html#the_js_object) is also available. The browser object itself is available as the `browser` property.
 
 ### The current page
 

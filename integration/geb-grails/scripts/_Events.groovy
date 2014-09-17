@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-def specTestTypeClassName = "grails.plugin.spock.test.GrailsSpecTestType"
+def pluginSpecTestTypeClassName = "grails.plugin.spock.test.GrailsSpecTestType"
+def coreSpecTestTypeClassName = "org.codehaus.groovy.grails.test.spock.GrailsSpecTestType"
 def junit3TestTypeClassName = "org.codehaus.groovy.grails.test.junit3.JUnit3GrailsTestType"
 def junit4TestTypeClassName = "org.codehaus.groovy.grails.test.junit4.JUnit4GrailsTestType"
 def buildAdapterClassName = "geb.buildadapter.SystemPropertiesBuildAdapter"
@@ -22,8 +23,12 @@ def buildAdapterClassName = "geb.buildadapter.SystemPropertiesBuildAdapter"
 def loadedTestTypes = []
 def runningTests = false
 
+// For Grails 2.3 spock is part of core so the spock plugin should no
+// longer be used. Try to support both configurations.
 tryToLoadTestTypes = {
-	tryToLoadTestType("spock", specTestTypeClassName)
+	if(!tryToLoadTestType("spock", coreSpecTestTypeClassName)) {
+		tryToLoadTestType("spock", pluginSpecTestTypeClassName)
+	}
 }
 
 tryToLoadTestType = { name, typeClassName ->
@@ -87,7 +92,6 @@ The available testing adapters are:
 
 - geb-spock (for Spock Framework, requires the grails-spock plugin)
 - geb-junit (for JUnit testing, no other plugins required)
-- geb-easyb (for EasyB, requires the grails-easyb plugin)
 
 
 The Grails specific classes such as grails.plugin.geb.GebSpec have also been removed. You should replace your usage
@@ -95,7 +99,6 @@ of these classes with the equivalent from the relevant testing adapter:
 
 - spock: geb.spock.GebReportingSpec
 - junit: geb.junit4.GebReportingTest
-- easyb: Use 'geb' plugin instead of 'geb-grails'
 
 Please see the Geb website for more information if required.
 """
@@ -115,7 +118,7 @@ eventTestPhasesStart = { phases ->
 eventTestPhaseStart = { phaseName ->
 	if (phaseName == 'functional') {
 		// GRAILS-7563
-		if (!binding.hasProperty('serverContextPath')) {
+		if (!binding.hasVariable('serverContextPath')) {
 			includeTargets << grailsScript("_GrailsPackage") 
 			createConfig() // GRAILS-7562
 			configureServerContextPath()
@@ -128,6 +131,17 @@ eventTestPhaseStart = { phaseName ->
 		def reportsDir = new File(grailsSettings.testReportsDir, 'geb')
 		System.setProperty(buildAdapterClass.REPORTS_DIR_PROPERTY_NAME, reportsDir.absolutePath)
 	}
+}
+
+eventTestPhasePrepared = { phaseName ->
+    if (phaseName == 'functional') {
+        //reset the base URL based on actual server port (starting with Grails 2.2.5, 2.3.1)
+        //this event gets called after Tomcat has started and actual local port as been assigned
+        def buildAdapterClass = loadGebBuildAdapterClass()
+        def baseUrl = argsMap["baseUrl"] ?:
+            "http://${serverHost ?: 'localhost'}:${getServerPort()}${serverContextPath == "/" ? "" : serverContextPath}/"
+        System.setProperty(buildAdapterClass.BASE_URL_PROPERTY_NAME, baseUrl)
+    }
 }
 
 // Just upgrade plugins without user input when building this plugin

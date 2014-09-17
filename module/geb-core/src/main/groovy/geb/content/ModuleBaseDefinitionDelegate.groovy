@@ -15,32 +15,85 @@
 package geb.content
 
 import geb.navigator.Navigator
+import geb.navigator.factory.NavigatorFactory
 import geb.textmatching.TextMatchingSupport
+import org.openqa.selenium.WebElement
 
 class ModuleBaseDefinitionDelegate {
 
-	private startingBase
 	private params
-	
-	@Delegate private NavigableSupport navigableSupport
-	@Delegate private TextMatchingSupport textMatchingSupport = new TextMatchingSupport()
-	
-	ModuleBaseDefinitionDelegate(Navigator startingBase, Map params) {
-		this.startingBase = startingBase
+
+	@Delegate
+	private NavigableSupport navigableSupport
+	@Delegate
+	private TextMatchingSupport textMatchingSupport = new TextMatchingSupport()
+
+	ModuleBaseDefinitionDelegate(NavigatorFactory navigatorFactory, Map params) {
 		this.params = params
-		navigableSupport = new NavigableSupport(this, null, startingBase.browser.navigatorFactory.relativeTo(startingBase))
+		navigableSupport = new NavigableSupport(navigatorFactory)
 	}
-	
-	def methodMissing(String name, args) {
-		startingBase."$name"(*args)
-	}
-	
+
 	def propertyMissing(String name) {
 		if (params.containsKey(name)) {
 			params[name]
 		} else {
-			navigableSupport."$name"
+			throw new MissingPropertyException(name, ModuleBaseDefinitionDelegate)
 		}
 	}
 
+	Navigator $() {
+		navigableSupport.$()
+	}
+
+	Navigator $(int index) {
+		navigableSupport.$(index)
+	}
+
+	Navigator $(Range<Integer> range) {
+		navigableSupport.$(range)
+	}
+
+	Navigator $(String selector) {
+		navigableSupport.$(selector)
+	}
+
+	Navigator $(String selector, int index) {
+		navigableSupport.$(selector, index)
+	}
+
+	Navigator $(String selector, Range<Integer> range) {
+		navigableSupport.$(selector, range)
+	}
+
+	Navigator $(Map<String, Object> attributes) {
+		navigableSupport.$(attributes)
+	}
+
+	Navigator $(Map<String, Object> attributes, int index) {
+		navigableSupport.$(attributes, index)
+	}
+
+	Navigator $(Map<String, Object> attributes, Range<Integer> range) {
+		navigableSupport.$(attributes, range)
+	}
+
+	Navigator $(Map<String, Object> attributes, String selector) {
+		navigableSupport.$(attributes, selector)
+	}
+
+	Navigator $(Map<String, Object> attributes, String selector, int index) {
+		navigableSupport.$(attributes, selector, index)
+	}
+
+	Navigator $(Map<String, Object> attributes, String selector, Range<Integer> range) {
+		navigableSupport.$(attributes, selector, range)
+	}
+
+	Navigator $(Navigator[] navigators) {
+		navigableSupport.$(navigators)
+	}
+
+	Navigator $(WebElement[] elements) {
+		navigableSupport.$(elements)
+	}
 }

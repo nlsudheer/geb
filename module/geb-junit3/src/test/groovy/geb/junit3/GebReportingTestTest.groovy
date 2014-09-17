@@ -12,18 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package geb.junit3
 
 import geb.test.CallbackHttpServer
-import geb.Page
 
 class GebReportingTestTest extends GebReportingTest {
 
 	def server = new CallbackHttpServer()
-	
+
 	static counter = 0
-	
+
 	static responseText = """
 		<html>
 		<body>
@@ -31,7 +29,7 @@ class GebReportingTestTest extends GebReportingTest {
 		</body>
 		</html>
 	"""
-	
+
 	void setUp() {
 		server.start()
 		server.get = { req, res ->
@@ -41,20 +39,19 @@ class GebReportingTestTest extends GebReportingTest {
 		browser.baseUrl = server.baseUrl
 		go()
 	}
-	
+
 	void testA() {
 		doTestReport()
 	}
-	
+
 	void testB() {
 		doTestReport()
 	}
 
-
 	void testC() {
 		doTestReport()
 	}
-	
+
 	def doTestReport() {
 		if (++counter > 1) {
 			def report = reportGroupDir.listFiles().find { it.name.startsWith("00" + (counter - 1)) }
@@ -62,7 +59,7 @@ class GebReportingTestTest extends GebReportingTest {
 			assert report.text.contains('<div class="d1" id="d1">')
 		}
 	}
-	
+
 	void tearDown() {
 		server.stop()
 		super.tearDown()

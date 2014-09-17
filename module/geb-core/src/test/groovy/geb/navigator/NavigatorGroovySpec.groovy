@@ -1,3 +1,18 @@
+/*
+ * Copyright 2013 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package geb.navigator
 
 import geb.Browser
@@ -7,7 +22,7 @@ import spock.lang.Specification
 class NavigatorGroovySpec extends Specification {
 
 	@Shared Browser browser
-	@Shared geb.navigator.Navigator onPage
+	@Shared Navigator onPage
 
 	def setupSpec() {
 		browser = new Browser()
@@ -26,7 +41,8 @@ class NavigatorGroovySpec extends Specification {
 	}
 
 	def "can use collect(Closure) on Navigator"() {
-		when: def list = navigator.collect { it.@id }
+		when:
+		def list = navigator.collect { it.@id }
 		then: list == expectedList
 		where:
 		navigator                 | expectedList
@@ -36,7 +52,8 @@ class NavigatorGroovySpec extends Specification {
 	}
 
 	def "can use each(Closure) on Navigator"() {
-		given: def list = []
+		given:
+		def list = []
 		when: navigator = navigator.each { list << it.@id }
 		then: list == expectedList
 		where:
@@ -47,7 +64,8 @@ class NavigatorGroovySpec extends Specification {
 	}
 
 	def "can use eachWithIndex(Closure) on Navigator"() {
-		given: def map = [:]
+		given:
+		def map = [:]
 		when: navigator = navigator.eachWithIndex { e, i -> map[e.@id] = i }
 		then: map == expectedMap
 		where:
@@ -68,7 +86,8 @@ class NavigatorGroovySpec extends Specification {
 	}
 
 	def "can use find(Closure) on Navigator"() {
-		when: def result = navigator.find { it.hasClass("article") }
+		when:
+		def result = navigator.find { it.hasClass("article") }
 		then: (result != null) == expectedResult
 		where:
 		navigator               | expectedResult
@@ -79,7 +98,8 @@ class NavigatorGroovySpec extends Specification {
 	}
 
 	def "can use findAll(Closure) on Navigator"() {
-		when: def result = navigator.findAll { it.hasClass("article") }
+		when:
+		def result = navigator.findAll { it.hasClass("article") }
 		then: result.size() == expectedSize
 		and: result instanceof Navigator // findAll should return a Navigator not a Collection<Navigator>
 		where:
@@ -116,7 +136,7 @@ class NavigatorGroovySpec extends Specification {
 	def "can use findLastIndexOf(Closure) on Navigator"() {
 		expect: navigator.findLastIndexOf { it.hasClass("article") } == expectedIndex
 		where:
-		navigator                     | expectedIndex
+		navigator               | expectedIndex
 		onPage.find("div")      | 9
 		onPage.find(".article") | 2
 		onPage.find("ol")       | -1
@@ -126,7 +146,7 @@ class NavigatorGroovySpec extends Specification {
 	def "can use findLastIndexOf(int, Closure) on Navigator"() {
 		expect: navigator.findLastIndexOf(startIndex) { it.hasClass("article") } == expectedIndex
 		where:
-		navigator                     | startIndex | expectedIndex
+		navigator               | startIndex | expectedIndex
 		onPage.find("div")      | 5          | 9
 		onPage.find("div")      | 1          | 9
 		onPage.find(".article") | 1          | 2
@@ -161,19 +181,19 @@ class NavigatorGroovySpec extends Specification {
 	def "can use getAt(Range) on Navigator"() {
 		expect: navigator[range]*.@id == expectedIds
 		where:
-		navigator               | range  | expectedIds
-		onPage.find("div")      | 0..1   | ["container", "header"]
-		onPage.find("div")      | 0..<2  | ["container", "header"]
-		onPage.find("div")      | 0..<0  | []
-		onPage.find("div")      | 12..-1 | ["footer"]
+		navigator          | range  | expectedIds
+		onPage.find("div") | 0..1   | ["container", "header"]
+		onPage.find("div") | 0..<2  | ["container", "header"]
+		onPage.find("div") | 0..<0  | []
+		onPage.find("div") | 12..-1 | ["footer"]
 	}
 
 	def "can use getAt(Collection) on Navigator"() {
 		expect: navigator[indexes]*.@id == expectedIds
 		where:
-		navigator               | indexes    | expectedIds
-		onPage.find("div")      | [0, 2, 4]  | ["container", "navigation", "main"]
-		onPage.find("div")      | [0, -1, 4] | ["container", "footer", "main"]
+		navigator          | indexes    | expectedIds
+		onPage.find("div") | [0, 2, 4]  | ["container", "navigation", "main"]
+		onPage.find("div") | [0, -1, 4] | ["container", "footer", "main"]
 	}
 
 	def "can use head() on Navigator"() {
@@ -196,9 +216,10 @@ class NavigatorGroovySpec extends Specification {
 		onPage.find(".article") | 2            | ["article-2", "article-3"]
 		onPage.find("bdo")      | 0            | []
 	}
-	
+
 	def "can use plus(Navigator) on Navigator"() {
-		when: def navigator = (navigator1 + navigator2).unique()
+		when:
+		def navigator = (navigator1 + navigator2).unique()
 		then: navigator.size() == expectedSize
 		and: navigator*.@id == expectedIds
 		where:

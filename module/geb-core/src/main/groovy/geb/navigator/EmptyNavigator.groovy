@@ -1,3 +1,18 @@
+/*
+ * Copyright 2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package geb.navigator
 
 import geb.Browser
@@ -81,61 +96,97 @@ class EmptyNavigator extends AbstractNavigator {
 	Navigator next() { this }
 
 	@Override
-	Navigator next(String selector) { this }
+	Navigator next(Map<String, Object> attributes) { this }
+
+	@Override
+	Navigator next(Map<String, Object> attributes = [:], String selector) { this }
 
 	@Override
 	Navigator nextAll() { this }
 
 	@Override
-	Navigator nextAll(String selector) { this }
+	Navigator nextAll(Map<String, Object> attributes) { this }
 
 	@Override
-	Navigator nextUntil(String selector) { this }
+	Navigator nextAll(Map<String, Object> attributes = [:], String selector) { this }
+
+	@Override
+	Navigator nextUntil(Map<String, Object> attributes) { this }
+
+	@Override
+	Navigator nextUntil(Map<String, Object> attributes = [:], String selector) { this }
 
 	@Override
 	Navigator previous() { this }
 
 	@Override
-	Navigator previous(String selector) { this }
+	Navigator previous(Map<String, Object> attributes) { this }
+
+	@Override
+	Navigator previous(Map<String, Object> attributes = [:], String selector) { this }
 
 	@Override
 	Navigator prevAll() { this }
 
 	@Override
-	Navigator prevAll(String selector) { this }
+	Navigator prevAll(Map<String, Object> attributes) { this }
 
 	@Override
-	Navigator prevUntil(String selector) { this }
+	Navigator prevAll(Map<String, Object> attributes = [:], String selector) { this }
+
+	@Override
+	Navigator prevUntil(Map<String, Object> attributes) { this }
+
+	@Override
+	Navigator prevUntil(Map<String, Object> attributes = [:], String selector) { this }
 
 	@Override
 	Navigator parent() { this }
 
 	@Override
-	Navigator parent(String selector) { this }
+	Navigator parent(Map<String, Object> attributes) { this }
+
+	@Override
+	Navigator parent(Map<String, Object> attributes = [:], String selector) { this }
 
 	@Override
 	Navigator parents() { this }
 
 	@Override
-	Navigator parents(String selector) { this }
+	Navigator parents(Map<String, Object> attributes) { this }
 
 	@Override
-	Navigator parentsUntil(String selector) { this }
+	Navigator parents(Map<String, Object> attributes = [:], String selector) { this }
 
 	@Override
-	Navigator closest(String selector) { this }
+	Navigator parentsUntil(Map<String, Object> attributes) { this }
+
+	@Override
+	Navigator parentsUntil(Map<String, Object> attributes = [:], String selector) { this }
+
+	@Override
+	Navigator closest(Map<String, Object> attributes) { this }
+
+	@Override
+	Navigator closest(Map<String, Object> attributes = [:], String selector) { this }
 
 	@Override
 	Navigator children() { this }
 
 	@Override
-	Navigator children(String selector) { this }
+	Navigator children(Map<String, Object> attributes) { this }
+
+	@Override
+	Navigator children(Map<String, Object> attributes = [:], String selector) { this }
 
 	@Override
 	Navigator siblings() { this }
 
 	@Override
-	Navigator siblings(String selector) { this }
+	Navigator siblings(Map<String, Object> attributes) { this }
+
+	@Override
+	Navigator siblings(Map<String, Object> attributes = [:], String selector) { this }
 
 	@Override
 	Navigator remove(int index) { this }
@@ -145,6 +196,26 @@ class EmptyNavigator extends AbstractNavigator {
 
 	@Override
 	boolean isDisplayed() { false }
+
+	@Override
+	boolean isDisabled() {
+		throw new UnsupportedOperationException("Cannot check value of 'disabled' attribute for an EmptyNavigator")
+	}
+
+	@Override
+	boolean isEnabled() {
+		throw new UnsupportedOperationException("Cannot check value of 'disabled' attribute for an EmptyNavigator")
+	}
+
+	@Override
+	boolean isReadOnly() {
+		throw new UnsupportedOperationException("Cannot check value of 'readonly' attribute for an EmptyNavigator")
+	}
+
+	@Override
+	boolean isEditable() {
+		throw new UnsupportedOperationException("Cannot check value of 'readonly' attribute for an EmptyNavigator")
+	}
 
 	@Override
 	String tag() { null }
@@ -197,5 +268,4 @@ class EmptyNavigator extends AbstractNavigator {
 			throw new MissingPropertyException(name, getClass())
 		}
 	}
-
 }

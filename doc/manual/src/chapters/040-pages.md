@@ -264,7 +264,7 @@ The list variant can also be used…
         loginButton(to: [LoginSuccessfulPage, LoginFailedPage]) { $("input.loginButton") }
     }
 
-Which on click sets the browser's page to be the first page in the list whose at checker returns true. This is equivalent to the [`page(Class[] potentialPageTypes)` browser method](api/geb/Browser.html#page\(Class[]\)) which is explained in the section on
+Which, on click, sets the browser's page to be the first page in the list whose at checker returns true. This is equivalent to the [`page(Class[] potentialPageTypes)` browser method](api/geb/Browser.html#page\(Class%3C%3F%20extends%20Page%3E\)) which is explained in the section on
 [changing pages][changing-pages].
 
 All of the page classes passed in when using the list variant have to have an “at” checker defined otherwise an `UndefinedAtCheckerException` will be thrown.
@@ -272,6 +272,15 @@ All of the page classes passed in when using the list variant have to have an �
 #### wait
 
 Default value: `false`
+
+Allowed values:
+
+* **`true`** - wait for the content using the _default wait_ configuration
+* **a string** - wait for the content using the _wait preset_ with this name from the configuration
+* **a number** - wait for the content for this many seconds, using the _default retry interval_ from the configuration
+* **a 2 element list of numbers** - wait for the content using element 0 as the timeout seconds value, and element 1 as the retry interval seconds value
+
+Any other value will be interpreted as `false`.
 
 The `wait` option allows Geb to wait an amount of time for content to appear on the page, instead of throwing a [`RequiredPageContentNotPresent`](api/geb/error/RequiredPageContentNotPresent.html) exception if the content is not present when requested.
 
@@ -301,16 +310,7 @@ This is equivalent to:
 
 See the [section on waiting](javascript.html#waiting) for the semantics of the `waitFor()` method, that is used here internally. Like `waitFor()` a [`WaitTimeoutException`](api/geb/waiting/WaitTimeoutException.html) will be thrown if the wait timeout expires.
 
-The value for the `wait` option can be one of the following:
-
-* **`true`** - wait for the content using the _default wait_ configuration
-* **a string** - wait for the content using the _wait preset_ with this name from the configuration
-* **a number** - wait for the content for this many seconds, using the _default retry interval_ from the configuration
-* **a 2 element list of numbers** - wait for the content using element 0 as the timeout seconds value, and element 1 as the retry interval seconds value
-
-Any other value will be interpreted as `false`.
-
-It is also possible to use `wait` when defining non element content, such as a string or number. Geb will wait until the content definition returns a value that conforms to the Groovy Truth.
+It is also possible to use `wait` when defining non-element content, such as a string or number. Geb will wait until the content definition returns a value that conforms to the Groovy Truth.
 
     class DynamicPage extends Page {
         static content = {
@@ -332,7 +332,7 @@ You can modify the behaviour of content with `wait` option set to true if you us
         dynamicallyAdded(wait: true, required: false) { $("p.dynamic") }
     }
 
-Then if wait timeout expires when retrieving `dynamicallyAdded` there will be no `WaitTimeoutException` thrown and the last closure evaluation value will be returned. If there is an exception thrown during closure evaluation it will be wrapped in an [`UnknownWaitForEvaluationResult`](api/geb/waiting/UnknownWaitForEvaluationResult.html) instance and returned.
+Then if wait timeout expires when retrieving `dynamicallyAdded`, there will be no `WaitTimeoutException` thrown, and the last closure evaluation value will be returned. If there is an exception thrown during closure evaluation, it will be wrapped in an [`UnknownWaitForEvaluationResult`](api/geb/waiting/UnknownWaitForEvaluationResult.html) instance and returned.
 
 Waiting content blocks are subject to “implicit assertions”. See the section on [implicit assertions][implicit-assertions] for more information.
 
@@ -342,7 +342,7 @@ Default value: `null`
 
 The `page` option allows the definition of a page the browser will be set to if the content describes a frame and is used in a `withFrame()` call.
 
-Given the following html...
+Given the following HTML...
 
     <html>
         <body>
@@ -379,7 +379,7 @@ Given the following html...
 
 ### Aliasing
 
-If you wish to have the same content definitions available under diferent names you can create a content definition that specifies `aliases` parameter:
+If you wish to have the same content definitions available under different names you can create a content definition that specifies `aliases` parameter:
 
 	class AliasingPage extends Page {
 		static content = {
@@ -397,7 +397,7 @@ Remember that the aliased content has to be defined before the aliasing content,
 
 ## “At” Verification
 
-Each page can define a way to check whether the underling browser is at the page that the page class actually represents. This is done via a `static` `at` closure…
+Each page can define a way to check whether the underlying browser is at the page that the page class actually represents. This is done via a `static` `at` closure…
 
     class ExamplePage extends Page {
         static at = { $("h1").text() == "Example" }
@@ -419,7 +419,7 @@ The `verifyAt()` method is used by the browser `at()` method which also returns 
 
 At checkers are subject to “implicit assertions”. See the section on [implicit assertions][implicit-assertions] for more information.
 
-If you don't wish to get an exception when “at” checking fails there are methods that return `false` in that case: [`Page#verifyAtSafely()`](api/geb/Page.html#verifyAtSafely\(\)) and [`Browser#isAt(Class<? extends Page>)`](api/geb/Browser.html#isAt\(java.lang.Class\)).
+If you don't wish to get an exception when “at” checking fails there are methods that return `false` in that case: [`Page#verifyAtSafely()`](api/geb/Page.html#verifyAtSafely\(boolean\)) and [`Browser#isAt(Class<? extends Page>)`](api/geb/Browser.html#isAt\(Class%3C%3F%20extends%20Page%3E,%20boolean\)).
 
 As mentioned previously, when a content template defines a “to” option of more than one page the page's `verifyAt()` method is used to determine which one of the pages to use. In this situation, any `AssertionError`s thrown by at checkers are suppressed.
 
@@ -434,7 +434,38 @@ The “at” checker is evaluated against the page instance, and can access defi
 
 If a page does not have an “at” checker, the `verifyAt()` method will throw an `UndefinedAtCheckerException`. The same will happen if any of the pages in a list passed to content template “to” option doesn't define an “at” checker.
 
-It can sometimes prove useful to wrap at verification in `waitFor` calls by default - some drivers are known to return control after url change before the page is fully loaded in some circumstances or before one might consider it to be loaded. This can be configured via [`atCheckWaiting`](configuration.html#waiting_in_at_checkers) option.
+It can sometimes prove useful to wrap at verification in `waitFor` calls by default - some drivers are known to return control after URL change before the page is fully loaded in some circumstances or before one might consider it to be loaded. This can be configured via [`atCheckWaiting`](configuration.html#waiting_in_at_checkers) option.
+
+### Unexpected pages
+
+A list of unexpected pages can be provided via [`unexpectedPages` configuration option](configuration.html#unexpected_pages).
+
+> Note that this feature does not operate on HTTP response codes as these are not exposed by WebDriver thus Geb does not have access to them. To use this feature your application has to render custom error pages that can be modeled as `Page` classes and detected by an `at` checker.
+
+If configured, the classes from the `unexpectedPages` list will be checked for first when ”at“ checking is performed for any page, and an `UnexpectedPageException` with an appropriate message will be raised if any of them is encountered.
+
+Given that your application renders a custom error page when a page is not found and a 404 HTTP response code is returned with a text like "Sorry but we could not find that page", you can model that page with a class:
+
+    class PageNotFoundPage extends Page {
+
+        static at = { $('#errorMessage').text() == 'Sorry but we could not find that page' }
+    }
+
+Then register that page in configuration:
+
+    unexpectedPages = [PageNotFoundPage]
+
+When checking if the browser is at a page...
+
+    at ExpectedPage
+
+..but the `at` checker for `PageNotFoundPage` matches, an `UnexpectedPageException` will be raised with the following message: "An unexpected page PageNotFoundPage was encountered when expected to be at ExpectedPage".
+
+Unexpected pages will be checked for whenever ”at“ checking is performed, even implicitly like when using `to` content template option or passing one or many `Page` classes to `Navigator`'s `click()` method.
+
+Finally, you can still explicitly check if the browser is at an unexpected page if you need to. Following will pass without throwing an `UnexpectedPageException` if ”at“ checking for `PageNotFoundPage` succeeds:
+
+    at PageNotFoundPage
 
 ## Page URLs
 
@@ -451,7 +482,7 @@ The url is used when using the browser `to()` method.
         to ExamplePage
     }
 
-See the section on [the base url](browser.html#the_base_url) for notes about urls and slashes.
+See the section on [the base url](browser.html#the_base_url) for notes about URLs and slashes.
 
 ## Advanced Page Navigation
 
@@ -479,14 +510,14 @@ The `to()` method can also take arguments…
 
 This will result in a request being made to “`http://myapp.com/example/1/2`”. This is because by default, any arguments passed to the `to()` method after the page class are converted to a URL path by calling `toString()` on each argument and joining them with “`/`”. 
 
-However, this is extensible. You can specify how a set of arguments is converted to a URL path to be added to the page URL. This is done by overriding the [`convertToPath()`](api/geb/Page.html#convertToPath\(Object[]\)) method.
+However, this is extensible. You can specify how a set of arguments is converted to a URL path to be added to the page URL. This is done by overriding the [`convertToPath()`](api/geb/Page.html#convertToPath\(java.lang.Object\)) method.
 The [`Page`][page-api] implementation of this method looks like this…
 
     String convertToPath(Object[] args) {
         args ? '/' + args*.toString().join('/') : ""
     }
 
-You can either overwrite this catch all method control path conversion for all invocations, or provide an overloaded version for a specific type signature. Consider the following…
+You can either overwrite this catchall method to control path conversion for all invocations or provide an overloaded version for a specific type signature. Consider the following…
 
     class Person {
         Long id
@@ -519,7 +550,7 @@ Any type of argument can be used with the `to()` method, **except** named parame
         to PersonPage, newPerson, flag: true
     }
 
-This will result in a request to “`http://myapp.com/person/5?flag=true`”. The query parameters are **not** sent to the [`convertToPath()`](api/geb/Page.html#convertToPath\(Object[]\)) method.
+This will result in a request to “`http://myapp.com/person/5?flag=true`”. The query parameters are **not** sent to the [`convertToPath()`](api/geb/Page.html#convertToPath\(java.lang.Object\)) method.
 
 
 ## Inheritance
@@ -576,18 +607,18 @@ The `onUnload()` method is called with next page object instance when the page i
 
 ## Dealing with frames
 
-Frames might seem a thing of the past but if you're accessing or testing some legacy application with Geb you might still need to deal with them. Thankfully Geb makes working with them groovier thanks to the `withFrame()` method which is available on Browser, Page and Module.
+Frames might seem a thing of the past, but if you're accessing or testing some legacy application with Geb, you might still need to deal with them. Thankfully, Geb makes working with them groovier thanks to the `withFrame()` method which is available on Browser, Page and Module.
 
 ### Executing code in the context of a frame
 
-There are multiple flavours of the `withFrame()` method, but the for all of them the closure parameter is executed in the context of a frame specified by the first parameter and after the execution the browser page is restored to what it was before the call:
+There are multiple flavours of the `withFrame()` method, but for all of them the closure parameter is executed in the context of a frame specified by the first parameter, and after the execution the browser page is restored to what it was before the call:
 
 * `withFrame(String, Closure)` - String parameter contains the name or id of a frame element
 * `withFrame(int, Closure)` - int parameter contains the index of the frame element, that is, if a page has three frames, the first frame would be at index “0”, the second at index “1” and the third at index “2”
 * `withFrame(Navigator, Closure)` - Navigator parameter should point to a frame element
 * `withFrame(SimplePageContent, Closure)` - SimplePageContent should contain a frame element
 
-Given the following html...
+Given the following HTML...
 
     <html>
         <body>
@@ -620,7 +651,7 @@ Given the following html...
 
     assert $('span') == 'main'
     
-If a frame cannot be found for a given first argument of the `withFrame()` call then [`NoSuchFrameException`](http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/NoSuchFrameException.html) is thrown.
+If a frame cannot be found for a given first argument of the `withFrame()` call, then [`NoSuchFrameException`](http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/NoSuchFrameException.html) is thrown.
 
 ### Switching pages and frames at once
 
@@ -639,86 +670,3 @@ Following shows an example usage:
 
 It is also possible to [specify a page to switch to for a page content that describes a frame][page-option].
 
-## Page Object builder pattern
-
-An additional way to work with page objects is a type-safe method that resembles a builder pattern.
-
-When using the page object builder style, instead of interacting with each content element directly from the test, page objects contain action methods that closely resemble the actions a user would perform if running the test manually.
-
-A sample test using standard Geb page objects:
-
-    to HomePage
-    loginButton.click()
-
-    username = "user1"
-    password = "password1"
-    loginButton.click()
-
-The same steps using the builder style:
-
-    HomePage homePage = to HomePage
-
-    LoginPage loginPage = homePage.clickLoginButton()
-
-    DashboardPage dashboardPage = loginPage.login("user1", "password1")
-
-Using the builder approach, each page object method encapsulates all the logic needed to perform a specific action - actions such as filling in forms, clicking links to new pages, dimissing modal dialogs etc. The action code could include waiting for the elements to be displayed, filling in field values, clicking a button, etc.
-
-In this example, the HomePage might look like:
-
-    class HomePage extends geb.Page {
-        static content = {
-            loginButton(to: LoginPage, wait: true) { $("#loginButton") }
-        }
-
-        LoginPage clickLoginButton() {
-            loginButton.click()
-
-            return browser.page
-        }
-    }
-
-and the LoginPage:
-
-    class LoginPage extends geb.Page {
-        static content = {
-            usernameField(wait: true) { $("#username") }
-            passwordField { $("#password") }
-            submitButton(to: DashboardPage) { $("#submit") }
-        }
-
-        DashboardPage login(String username, String password) {
-            usernameField.value(username)
-            passwordField.value(password)
-
-            submitButton.click()
-
-            return browser.page
-        }
-    }
-
-The encapsulated page object actions are especially handy when interacting with the content requires automation-specific code, such as waiting for elements to be displayed. One example of this is working with a modal dialog where we want the test to wait for the modal to be displayed, click the confirm button, then wait for the modal to close. We can capture all that code in the page object and avoid needing to repeat it in every test that interacts with the modal. And if the dialog itself changes, we only have a single spot in the test codebase to update.
-
-    class SaveConfirmationModal extends geb.page {
-        static content = {
-            confirmButton(to: ResultsPage) { $("#confirmButton") }
-        }
-
-        ResultsPage confirm() {
-            waitFor { confirmButton.displayed }
-
-            confirmButton.click()
-
-            waitFor { !confirmButton.displayed }
-
-            return browser.page
-        }
-    }
-
-Each page object action also returns a reference to the current page by returning `browser.page`. That allows the test to easily keep a reference to the current page which means that your IDE will be able to provide you with autocomplete hints for your code.
-
-Returning the current page also allows the test to chain page calls together for more concise test code that resembles a builder:
-
-    DashboardPage dashboardPage = to(HomePage).clickLoginButton().login("user1", "password1")
-
-Using the builder style and creating these individual page object actions is a little more work up front, but it can pay dividends in the long run with test code that is easier to read and simpler to maintain.

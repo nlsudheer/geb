@@ -14,7 +14,8 @@
  */
 package geb
 
-import geb.content.NavigableSupport
+import geb.content.PageContentContainer
+import geb.content.PageContentSupport
 import geb.content.PageContentTemplate
 import geb.content.PageContentTemplateBuilder
 import geb.content.TemplateDerivedPageContent
@@ -22,28 +23,36 @@ import geb.download.DownloadSupport
 import geb.frame.FrameSupport
 import geb.js.AlertAndConfirmSupport
 import geb.js.JavascriptInterface
-import geb.navigator.Navigator
+import geb.navigator.factory.NavigatorFactory
 import geb.textmatching.TextMatchingSupport
 import geb.waiting.WaitingSupport
 
-class Module extends TemplateDerivedPageContent {
+class Module extends TemplateDerivedPageContent implements PageContentContainer {
 
 	static base = null
-	
-	@Delegate private NavigableSupport navigableSupport
-	@Delegate private DownloadSupport _downloadSupport
-	@Delegate private WaitingSupport _waitingSupport
-	@Delegate private FrameSupport frameSupport
-	
-	@Delegate private TextMatchingSupport textMatchingSupport = new TextMatchingSupport()
-	@Delegate private AlertAndConfirmSupport _alertAndConfirmSupport
-	
-	void init(PageContentTemplate template, Navigator navigator, Object[] args) {
-		Map<String, PageContentTemplate> contentTemplates = PageContentTemplateBuilder.build(template.config, this, 'content', this.class, Module)
-		navigableSupport = new NavigableSupport(this, contentTemplates, navigator.browser.navigatorFactory.relativeTo(navigator))
-		super.init(template, navigator, *args)
+
+	@Delegate
+	private PageContentSupport pageContentSupport
+	@Delegate
+	private DownloadSupport _downloadSupport
+	@Delegate
+	private WaitingSupport _waitingSupport
+	@Delegate
+	private FrameSupport frameSupport
+
+	@Delegate
+	private TextMatchingSupport textMatchingSupport = new TextMatchingSupport()
+	@Delegate
+	private AlertAndConfirmSupport _alertAndConfirmSupport
+
+	@SuppressWarnings('SpaceBeforeOpeningBrace')
+	void init(PageContentTemplate template, NavigatorFactory navigatorFactory, Object[] args) {
+		Map<String, PageContentTemplate> contentTemplates = PageContentTemplateBuilder.build(template.config, this, navigatorFactory, 'content', this.class, Module)
+		def navigator = navigatorFactory.base
+		pageContentSupport = new PageContentSupport(this, contentTemplates, navigatorFactory, navigator)
+		super.init(template, navigator, args)
 		_downloadSupport = new DownloadSupport(browser)
-		_waitingSupport  = new WaitingSupport(browser.config)
+		_waitingSupport = new WaitingSupport(browser.config)
 		frameSupport = new FrameSupport(browser)
 		_alertAndConfirmSupport = new AlertAndConfirmSupport({ this.getJs() }, browser.config)
 	}
@@ -52,4 +61,15 @@ class Module extends TemplateDerivedPageContent {
 		page.js
 	}
 
+	def methodMissing(String name, args) {
+		pageContentSupport.methodMissing(name, args)
+	}
+
+	def propertyMissing(String name) {
+		pageContentSupport.propertyMissing(name)
+	}
+
+	def propertyMissing(String name, val) {
+		pageContentSupport.propertyMissing(name, val)
+	}
 }

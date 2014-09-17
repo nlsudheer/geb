@@ -30,9 +30,9 @@ Some config options can be specified by system properties. In general, config op
 
 ### Build Adapter
 
-The build adapter mechanism exists to allow Geb to integrate with development/build environments that logically dictate config options. For example, Grails dictates what the base url and directory for reports should be set to and the Geb plugin for Grails uses the build adapter mechanism to set this up.
+The build adapter mechanism exists to allow Geb to integrate with development/build environments that logically dictate config options. For example, Grails dictates what the base URL and directory for reports should be set to and the Geb plugin for Grails uses the build adapter mechanism to set this up.
 
-This mechanism works by loading the name of the class (fully qualified) by the system property `geb.build.adapter` that must implement the [BuildAdapter](api/geb/BuildAdapter.html) interface. Currently, the build adapter can only influence the base url to use, and the location of the reports directory.
+This mechanism works by loading the name of the class (fully qualified) by the system property `geb.build.adapter` that must implement the [BuildAdapter](api/geb/BuildAdapter.html) interface. Currently, the build adapter can only influence the base URL to use, and the location of the reports directory.
 
 If the `geb.build.adapter` system property is not explicitly set, it defaults to [`SystemPropertiesBuildAdapter`](api/geb/buildadapter/SystemPropertiesBuildAdapter.html). As you can probably deduce, this default implementation uses system properties to specify values, so is usable in most circumstances. See the linked API doc for the details of the specific system properties it looks for.
 
@@ -111,9 +111,9 @@ If no explicit driver is specified then Geb will look for the following drivers 
 
 ### Navigator Factory
 
-It is possible to specify your own implementation of [`NavigatorFactory`](api/geb/navigatory/factory/NavigatorFactory.html) via configuration. This is useful if you want to extend the [`Navigator`](api/geb/navigatory/Navigator.html) class to provide your own behaviour extensions.
+It is possible to specify your own implementation of [`NavigatorFactory`](api/geb/navigator/factory/NavigatorFactory.html) via configuration. This is useful if you want to extend the [`Navigator`](api/geb/navigator/Navigator.html) class to provide your own behaviour extensions.
 
-Rather than inject your own `NavigatorFactory`, it is simpler to inject a custom [`InnerNavigatorFactory`](api/geb/navigatory/factory/NavigatorFactory.html) which is a much simpler interface. To do this, you can specify a closure for the config key `innerNavigatorFactory`…
+Rather than inject your own `NavigatorFactory`, it is simpler to inject a custom [`InnerNavigatorFactory`](api/geb/navigator/factory/InnerNavigatorFactory.html) which is a much simpler interface. To do this, you can specify a closure for the config key `innerNavigatorFactory`…
 
     innerNavigatorFactory = { Browser browser, List<org.openqa.selenium.WebElement> elements
         elements ? new MyCustomNavigator(browser, elements) : new geb.navigator.EmptyNavigator()
@@ -125,7 +125,7 @@ This is a rather advanced use case. If you need to do this, check out the source
 
 Geb's ability to cache a driver and re-use it for the lifetime of the JVM (i.e. [the implicit driver lifecycle](driver.html#implicit_lifecycle)) can be disabled by setting the `cacheDriver` config option to `false`. However, if you do this you become [responsible for quitting](driver.html#explicit_lifecycle) every driver that is created at the appropriate time.
 
-The default caching behavior is to cache the driver globally across the JVM. If you are using Geb in multiple threads this may not be what you want as neither Geb `Browser` objects nor WebDriver at the core is thread safe. To remedy this, you can instruct Geb to cache the driver instance per thread by setting the config option `cacheDriverPerThread` to true.
+The default caching behavior is to cache the driver globally across the JVM. If you are using Geb in multiple threads this may not be what you want, as neither Geb `Browser` objects nor WebDriver at the core is thread safe. To remedy this, you can instruct Geb to cache the driver instance per thread by setting the config option `cacheDriverPerThread` to true.
 
 Also, by default Geb will register a shutdown hook to quit any cached browsers when the JVM exits. You can disable this by setting te config property `quitCachedDriverOnShutdown` to `false`.
 
@@ -172,12 +172,29 @@ At checkers can be configured to be implictly wrapped with `waitFor` calls. This
 
 	atCheckWaiting = true
 
-The possible values for the `atCheckWaiting` option are consistent with the ones for content definition and can be one of the following:
+The possible values for the `atCheckWaiting` option are consistent with the [ones for `wait` option of content definitions](pages.html#wait).
 
-* **`true`** - wait for the content using the _default wait_ configuration
-* **a string** - wait for the content using the _wait preset_ with this name from the configuration
-* **a number** - wait for the content for this many seconds, using the _default retry interval_ from the configuration
-* **a 2 element list of numbers** - wait for the content using element 0 as the timeout seconds value, and element 1 as the retry interval seconds value
+### Waiting for base navigator
+
+Sometimes Firefox driver times out when trying to find the root HTML element of the page. This manifests itself in an error similar to:
+
+    org.openqa.selenium.NoSuchElementException: Unable to locate element: {"method":"tag name","selector":"html"}
+    Command duration or timeout: 576 milliseconds
+    For documentation on this error, please visit: http://seleniumhq.org/exceptions/no_such_element.html
+
+You can prevent this error from happening by configuring a wait timeout to use when the driver is locating the root HTML element, using:
+
+    baseNavigatorWaiting = true
+
+The possible values for the `baseNavigatorWaiting` option are consistent with the [ones for `wait` option of content definitions](pages.html#wait).
+
+### Unexpected pages
+
+The `unexpectedPages` option allows to specify a list of unexpected `Page` classes that will be checked for when ”at“ checks are performed. Given that `PageNotFoundPage` and `InternalServerErrorPage` have been defined:
+
+	unexpectedPages = [PageNotFoundPage, InternalServerErrorPage]
+
+See [this section](pages.html#unexpected_pages) for more information.
 
 ### Reporter
 
@@ -201,7 +218,7 @@ It is also possible to set the `reportsDir` config item to a file.
 
     reportsDir = new File("target/geb-reports")
 
-By default this value is **not set**. The browser's [`report()`](browser.html#reporting) method requires a value for this config item so if you are using the reporting features you **must** set a reports dir.
+By default this value is **not set**. The browser's [`report()`](api/geb/Browser.html#report\(java.lang.String\)) method requires a value for this config item so if you are using the reporting features you **must** set a reports dir.
 
 
 ### Report Test Failures Only
@@ -228,11 +245,11 @@ The [Configuration][configuration-api] object also has setters for all of the co
 
 For example, you may have one Spock spec that requires the `autoClearCookies` property to be disabled. You could disable it for just this spec by doing something like…
 
-	import geb.spock.GebReportingSpec
-	
-	class FunctionalSpec extends GebReportingSpec {
-		def setup() {
-			browser.config.autoClearCookies = false
-		}
-	}
+    import geb.spock.GebReportingSpec
+    
+    class FunctionalSpec extends GebReportingSpec {
+        def setup() {
+            browser.config.autoClearCookies = false
+        }
+    }
 	

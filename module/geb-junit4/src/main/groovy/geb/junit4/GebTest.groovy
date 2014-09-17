@@ -14,21 +14,22 @@
  */
 package geb.junit4
 
-import geb.*
-import org.openqa.selenium.WebDriver
+import geb.Browser
+import geb.Configuration
+import geb.ConfigurationLoader
 import org.junit.After
 
 class GebTest {
 
 	String gebConfEnv = null
 	String gebConfScript = null
-	
+
 	private Browser _browser
 
 	Configuration createConf() {
-		new ConfigurationLoader(gebConfEnv).getConf(gebConfScript)
+		new ConfigurationLoader(gebConfEnv, System.properties, new GroovyClassLoader(getClass().classLoader)).getConf(gebConfScript)
 	}
-	
+
 	Browser createBrowser() {
 		new Browser(createConf())
 	}
@@ -39,7 +40,7 @@ class GebTest {
 		}
 		_browser
 	}
-	
+
 	@After
 	void resetBrowser() {
 		if (_browser?.config?.autoClearCookies) {
@@ -49,13 +50,13 @@ class GebTest {
 	}
 
 	def methodMissing(String name, args) {
-		getBrowser()."$name"(*args)
+		getBrowser()."$name"(* args)
 	}
 
 	def propertyMissing(String name) {
 		getBrowser()."$name"
 	}
-	
+
 	def propertyMissing(String name, value) {
 		getBrowser()."$name" = value
 	}

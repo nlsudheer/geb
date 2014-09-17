@@ -14,20 +14,21 @@
  */
 package geb.junit3
 
-import geb.*
-import org.openqa.selenium.WebDriver
+import geb.Browser
+import geb.Configuration
+import geb.ConfigurationLoader
 
 class GebTest extends GroovyTestCase {
 
 	String gebConfEnv = null
 	String gebConfScript = null
-	
+
 	private Browser _browser
 
 	Configuration createConf() {
-		new ConfigurationLoader(gebConfEnv).getConf(gebConfScript)
+		new ConfigurationLoader(gebConfEnv, System.properties, new GroovyClassLoader(getClass().classLoader)).getConf(gebConfScript)
 	}
-	
+
 	Browser createBrowser() {
 		new Browser(createConf())
 	}
@@ -47,13 +48,13 @@ class GebTest extends GroovyTestCase {
 	}
 
 	def methodMissing(String name, args) {
-		getBrowser()."$name"(*args)
+		getBrowser()."$name"(* args)
 	}
 
 	def propertyMissing(String name) {
 		getBrowser()."$name"
 	}
-	
+
 	def propertyMissing(String name, value) {
 		getBrowser()."$name" = value
 	}

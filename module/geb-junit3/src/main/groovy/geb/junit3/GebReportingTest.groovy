@@ -14,9 +14,7 @@
  */
 package geb.junit3
 
-import geb.Browser
 import geb.report.ReporterSupport
-import org.openqa.selenium.WebDriver
 
 class GebReportingTest extends GebTest {
 
@@ -27,7 +25,7 @@ class GebReportingTest extends GebTest {
 	void report(String label) {
 		browser.report(ReporterSupport.toTestReportLabel(getTestCounterValue(), instanceTestCounter++, getName(), label))
 	}
-	
+
 	void setUp() {
 		reportGroup getClass()
 		incrementTestCounterValue()
@@ -40,12 +38,12 @@ class GebReportingTest extends GebTest {
 			cleanReportGroupDir()
 		}
 	}
-	
+
 	void tearDown() {
 		report "end"
 		super.tearDown()
 	}
-	
+
 	private incrementTestCounterValue() {
 		def key = getKeyNameForTracking()
 		if (testCounters.containsKey(key)) {
@@ -58,7 +56,7 @@ class GebReportingTest extends GebTest {
 	private getTestCounterValue() {
 		testCounters[getKeyNameForTracking()] ?: 1
 	}
-	
+
 	private getKeyNameForTracking() {
 		getClass().name
 	}

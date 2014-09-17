@@ -14,34 +14,34 @@
  */
 package geb.content
 
-import geb.navigator.Navigator
-import geb.Page
-import geb.Module
-
 import geb.Configuration
-
+import geb.Module
+import geb.Page
 import geb.error.RequiredPageValueNotPresent
+import geb.navigator.Navigator
+import geb.navigator.factory.NavigatorFactory
 import geb.waiting.WaitTimeoutException
-import geb.error.InvalidPageContent
 
 class PageContentTemplate {
 
 	final Configuration config
-	final Navigable owner
+	final PageContentContainer owner
 	final String name
 	final PageContentTemplateParams params
 	final Closure factory
-	
+	final NavigatorFactory navigatorFactory
+
 	private cache = [:]
-	
-	PageContentTemplate(Configuration config, Navigable owner, String name, Map<String, ?> params, Closure factory) {
+
+	PageContentTemplate(Configuration config, PageContentContainer owner, String name, Map<String, ?> params, Closure factory, NavigatorFactory navigatorFactory) {
 		this.config = config
 		this.owner = owner
 		this.name = name
 		this.params = new PageContentTemplateParams(this, params)
 		this.factory = factory
+		this.navigatorFactory = navigatorFactory
 	}
-	
+
 	String toString() {
 		"$name - $owner"
 	}
@@ -49,25 +49,25 @@ class PageContentTemplate {
 	Page getPage() {
 		owner instanceof Page ? owner : owner.getPage()
 	}
-	
+
 	def get(Object[] args) {
-		params.cache ? fromCache(*args) : create(*args)
+		params.cache ? fromCache(* args) : create(* args)
 	}
 
 	private create(Object[] args) {
 		def createAction = {
-			def factoryReturn = invokeFactory(*args)
-			def creation = wrapFactoryReturn(factoryReturn, *args)
+			def factoryReturn = invokeFactory(* args)
+			def creation = wrapFactoryReturn(factoryReturn, * args)
 			if (params.required) {
-				if (creation != null && creation instanceof PageContent) {
+				if (creation != null && creation instanceof TemplateDerivedPageContent) {
 					creation.require()
 				} else if (creation == null) {
-					throw new RequiredPageValueNotPresent(this, *args)
+					throw new RequiredPageValueNotPresent(this, * args)
 				}
 			}
 			creation
 		}
-		
+
 		def wait = config.getWaitForParam(params.wait)
 		if (wait) {
 			try {
@@ -82,41 +82,33 @@ class PageContentTemplate {
 			createAction()
 		}
 	}
-	
+
 	private fromCache(Object[] args) {
 		def argsHash = Arrays.deepHashCode(args)
 		if (!cache.containsKey(argsHash)) {
-			cache[argsHash] = create(*args)
+			cache[argsHash] = create(* args)
 		}
 		cache[argsHash]
 	}
-	
+
 	private invokeFactory(Object[] args) {
 		factory.delegate = createFactoryDelegate(args)
 		factory.resolveStrategy = Closure.DELEGATE_FIRST
-		factory(*args)
+		factory(* args)
 	}
-	
+
 	private createFactoryDelegate(Object[] args) {
 		new PageContentTemplateFactoryDelegate(this, args)
 	}
 
 	private wrapFactoryReturn(factoryReturn, Object[] args) {
-		def pageContent
-		if (factoryReturn instanceof Navigator) {
-			pageContent = new SimplePageContent()
-			pageContent.init(this, factoryReturn, *args)
+		if (Navigator.isInstance(factoryReturn) && !Module.isInstance(factoryReturn)) {
+			def pageContent = new SimplePageContent()
+			pageContent.init(this, factoryReturn, * args)
 			pageContent
-		} else if (factoryReturn instanceof SimplePageContent) {
-			pageContent = new SimplePageContent()
-			pageContent.init(this, factoryReturn.$(), *args)
-			pageContent
-		} else if (factoryReturn instanceof Module) {
-			factoryReturn
 		} else {
-			// Is some kind of value, like the text content of a node
 			factoryReturn
 		}
 	}
-	
+
 }

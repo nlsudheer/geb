@@ -1,20 +1,83 @@
+import geb.gradle.saucelabs.SauceAccount
+import geb.gradle.browserstack.BrowserStackAccount
+
+apply plugin: "geb-saucelabs"
+apply plugin: "geb-browserstack"
+
+repositories {
+	maven { url "http://repository-saucelabs.forge.cloudbees.com/release" }
+}
+
 dependencies {
 	compile seleniumDependency, seleniumSupportDependency
 	
 	compile project(":module:geb-ast")
 	compile project(":module:geb-waiting")
+
+	sauceConnect "com.saucelabs:sauce-connect:3.1.32"
 }
 
 test {
-	maxParallelForks 2
-	if (driver == "htmlunit") {
-		exclude "**/ExoticAttributeValuesSpec.class"
-	}
-	crossBrowser.enable it
+	maxParallelForks (Math.max(2, Runtime.runtime.availableProcessors().intdiv(2)))
 }
 
-tasks.withType(Test).matching { it.hasProperty("crossBrowser") }.all {
-	maxParallelForks 3
+task allCrossBrowserTests {
+	dependsOn 'allSauceLabsTests', 'allBrowserStackTests'
+}
+
+sauceLabs {
+	browsers {
+		chrome_linux
+		firefox_linux
+		delegate."safari_OS X 10.9_7"
+	}
+	task {
+		testClassesDir = test.testClassesDir
+		testSrcDirs = test.testSrcDirs
+		classpath = test.classpath
+		maxParallelForks 3
+	}
+	account {
+		username = System.getenv(SauceAccount.USER_ENV_VAR)
+		accessKey = System.getenv(SauceAccount.ACCESS_KEY_ENV_VAR)
+	}
+	connect {
+		timeout 15 // minutes
+	}
+}
+
+browserStack {
+	def applicationAddresses = [8000, 8080, 8888, 9000, 9090].collect { "http://localhost:$it" }
+	application(*applicationAddresses)
+	browsers {
+		chrome_mac
+		chrome_windows
+		firefox_windows
+		firefox_mac
+		internetExplorer_windows_8
+		internetExplorer_windows_9
+		internetExplorer_windows_10
+		internetExplorer_windows_11
+
+	}
+	task {
+		testClassesDir = test.testClassesDir
+		testSrcDirs = test.testSrcDirs
+		classpath = test.classpath
+		maxParallelForks 5
+	}
+	account {
+		username = System.getenv(BrowserStackAccount.USER_ENV_VAR)
+		accessKey = System.getenv(BrowserStackAccount.ACCESS_KEY_ENV_VAR)
+	}
+}
+
+task nonIeBrowserStackTests {
+	dependsOn 'chromeMacTest', 'chromeWindowsTest', 'firefoxWindowsTest', 'firefoxMacTest'
+}
+
+task ieBrowserStackTests {
+	dependsOn 'internetExplorerWindows8Test', 'internetExplorerWindows9Test', 'internetExplorerWindows10Test', 'internetExplorerWindows11Test'
 }
 
 modifyPom { pom ->

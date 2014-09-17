@@ -14,7 +14,7 @@
 [browser]: browser.html
 [navigator]: navigator.html
 [clicking]: navigator.html#clicking
-[page-navigation]: page-navigation.html
+[page-navigation]: pages.html#advanced_page_navigation
 [page-at]: pages.html#at_verification
 [required]: pages.html#required
 [drive]: browser.html#the_drive_method
@@ -25,9 +25,9 @@
 [spock]: http://spockframework.org/
 [junit]: http://www.junit.org/
 [testng]: http://testng.org/
-[cuke4duke]: https://github.com/cucumber/cuke4duke/wiki
+[cucumber-jvm]: https://github.com/cucumber/cucumber-jvm
+[geb-cucumber]: https://github.com/tomdcc/geb-cucumber
 [javascriptexecutor]: http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/JavascriptExecutor.html
-[easyb]: http://www.easyb.org/
 [remotewebdriver]: http://code.google.com/p/selenium/wiki/RemoteWebDriver
 [remotewebdriver-server]: http://code.google.com/p/selenium/wiki/RemoteWebDriverServer
 [configslurper]: http://groovy.codehaus.org/gapi/groovy/util/ConfigSlurper.html

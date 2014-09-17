@@ -14,11 +14,8 @@
  */
 package geb.driver
 
-import org.openqa.selenium.WebDriver
-import geb.error.UnableToLoadAnyDriversException
-
 class DefaultDriverFactory extends NameBasedDriverFactory {
-	
+
 	DefaultDriverFactory(ClassLoader classLoader) {
 		super(classLoader, DriverRegistry.knownDriverClassNamesInPreferenceOrder.join(NameBasedDriverFactory.DRIVER_SEPARATOR))
 	}

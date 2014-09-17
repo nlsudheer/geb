@@ -100,11 +100,11 @@ This time let us define our content up front using the Page Object pattern…
     import geb.Page
     import geb.Module
     
-    // modules are reusable fragments that can be used across pages that can be paramaterised
+    // modules are reusable fragments that can be used across pages that can be parameterised
     // here we are using a module to model the search function on the home and results pages
     class GoogleSearchModule extends Module {
         
-        // a paramaterised value set when the module is included
+        // a parameterised value set when the module is included
         def buttonValue
         
         // the content DSL
@@ -167,7 +167,7 @@ Now our script again, using the above defined content…
 
 ### Testing
 
-Geb itself does not include any kind of testing or execution framework. Rather, it works with existing popular tools like [Spock][spock], [JUnit][junit], [TestNG][testng], [Cucumber][cuke4duke] and [EasyB][easyb]. While Geb works well with all of these test tools, we encourage the use of [Spock][spock] as it's a great match for Geb with its focus and style.
+Geb itself does not include any kind of testing or execution framework. Rather, it works with existing popular tools like [Spock][spock], [JUnit][junit], [TestNG][testng] and [Cucumber][cucumber-jvm]. While Geb works well with all of these test tools, we encourage the use of [Spock][spock] as it's a great match for Geb with its focus and style.
 
 Here is our Google case again, this time use Geb's [Spock][spock] integration…
 
@@ -238,5 +238,4 @@ Via Gradle…
 
 Alternatively, if using an integration such as `geb-spock` or `geb-junit` you can depend on that instead of `geb-core`.
 
-> Be sure to check the chapter on [build integrations](build-integrations.html) for information on using Geb with particular environments
-, like [Grails][grails].
+> Be sure to check the chapter on [build integrations](build-integrations.html) for information on using Geb with particular environments, like [Grails][grails].

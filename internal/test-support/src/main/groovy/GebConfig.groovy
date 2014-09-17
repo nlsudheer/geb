@@ -1,42 +1,49 @@
 import geb.buildadapter.BuildAdapterFactory
-import org.openqa.selenium.Platform
-import org.openqa.selenium.remote.DesiredCapabilities
-import org.openqa.selenium.remote.RemoteWebDriver
+import geb.driver.BrowserStackDriverFactory
+import geb.driver.SauceLabsDriverFactory
 
 testValue = true // used in a test in geb-core
+
+String getForkIndex(int total) {
+	String workerName = System.getProperty('org.gradle.test.worker')
+	int workerNumber = workerName ? ((workerName =~ /[^\d]*([\d]+)/)[0][1]).toInteger() : 0
+	(workerNumber % total).toString()
+}
+
+void setPortIndexProperty(String index) {
+	System.setProperty('geb.port.index', index)
+}
 
 if (!BuildAdapterFactory.getBuildAdapter(this.class.classLoader).reportsDir) {
 	reportsDir = "build/geb"
 }
 
-def sauceBrowser = System.getProperty("geb.sauce.browser")
-if (sauceBrowser) {
+def sauceLabsBrowser = System.getProperty("geb.saucelabs.browser")
+if (sauceLabsBrowser) {
+	setPortIndexProperty(getForkIndex(3))
 	driver = {
 		def username = System.getenv("GEB_SAUCE_LABS_USER")
 		assert username
 		def accessKey = System.getenv("GEB_SAUCE_LABS_ACCESS_PASSWORD")
 		assert accessKey
-
-		def url = new URL("http://$username:$accessKey@ondemand.saucelabs.com:80/wd/hub")
-
-		def parts = sauceBrowser.split(":", 3)
-		def name = parts[0]
-		def platform = parts.size() > 1 ? parts[1] : null
-		def version = parts.size() > 2 ? parts[2] : null
-
-		DesiredCapabilities browser = DesiredCapabilities."$name"();
-		if (platform) {
-			try {
-				platform = Platform."${platform.toUpperCase()}"
-			} catch (MissingPropertyException ignore) {
-
-			}
-			browser.setCapability("platform", platform )
-		}
-		if (version != null) {
-			browser.setCapability("version", version.toString())
-		}
-
-		new RemoteWebDriver(url, browser)
+		new SauceLabsDriverFactory().create(sauceLabsBrowser, username, accessKey)
 	}
+}
+
+def browserStackBrowser = System.getProperty("geb.browserstack.browser")
+if (browserStackBrowser) {
+	def forkIndex = getForkIndex(5)
+	setPortIndexProperty(forkIndex)
+	driver = {
+		def username = System.getenv("GEB_BROWSERSTACK_USERNAME")
+		assert username
+		def accessKey = System.getenv("GEB_BROWSERSTACK_AUTHKEY")
+		assert accessKey
+		new BrowserStackDriverFactory().create(browserStackBrowser, username, accessKey)
+	}
+}
+
+def devDriver = System.getProperty("geb.dev.driver")
+if (devDriver != "htmlunit") {
+	driver = devDriver
 }

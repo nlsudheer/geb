@@ -26,6 +26,60 @@ import org.openqa.selenium.WebElement
 interface Navigator extends Iterable<Navigator> {
 
 	/**
+	 * Creates a new Navigator instance containing the elements whose attributes match the specified values or patterns.
+	 * The key 'text' can be used to match the text contained in elements. Regular expression Pattern objects may be
+	 * used as values. Note that for selecting by class it is better to use a CSS selector.
+	 * <p>Examples:</p>
+	 * <dl>
+	 * <dt>find(name: "firstName")</dt>
+	 * <dd>selects all elements with the name "firstName"</dd>
+	 * <dt>find(name: "firstName", readonly: "readonly")</dt>
+	 * <dd>selects all elements with the name "firstName" that are read-only</dd>
+	 * <dt>find(text: "I can has cheezburger")</dt>
+	 * <dd>selects all elements containing the exact text</dd>
+	 * <dt>find(text: ~/I can has.+/)</dt>
+	 * <dd>selects all elements whose text matches a regular expression</dd>
+	 * </dl>
+	 * @param predicates a Map with keys representing attributes and values representing required values or patterns
+	 * @return a new Navigator instance containing the matched elements
+	 */
+	Navigator find(Map<String, Object> predicates)
+
+	/**
+	 * Shorthand for <code>find(predicates, null, index..index)</code>
+	 *
+	 * @param selector
+	 * @return new Navigator
+	 */
+	Navigator find(Map<String, Object> predicates, int index)
+
+	/**
+	 * Shorthand for <code>find(predicates, null, range)</code>
+	 *
+	 * @param predicates attribute predicates
+	 * @param predicates range the range of matches to select
+	 * @return new Navigator
+	 */
+	Navigator find(Map<String, Object> predicates, Range<Integer> range)
+
+	/**
+	 * Selects elements by both CSS selector and attributes. For example find("input", name: "firstName") will select
+	 * all input elements with the name "firstName".
+	 * @param selector a CSS selector
+	 * @param predicates a Map with keys representing attributes and values representing required values or patterns
+	 * @return a new Navigator instance containing the matched elements
+	 */
+	Navigator find(Map<String, Object> predicates, String selector)
+
+	/**
+	 * Shorthand for <code>find(predicates, selector, index..index)</code>
+	 *
+	 * @param selector
+	 * @return new Navigator
+	 */
+	Navigator find(Map<String, Object> predicates, String selector, int index)
+
+	/**
 	 * Creates a new Navigator instance containing the elements matching the given
 	 * CSS selector. Any CSS capabilities supported by the underlying WebDriver instance are supported.
 	 * If the underlying WebDriver instance does not natively support finding elements by CSS selectors then tag, id
@@ -52,22 +106,6 @@ interface Navigator extends Iterable<Navigator> {
 	Navigator find(Map<String, Object> predicates, String selector, Range<Integer> range)
 
 	/**
-	 * Shorthand for <code>find(predicates, selector, index..index)</code>
-	 *
-	 * @param selector
-	 * @return new Navigator
-	 */
-	Navigator find(Map<String, Object> predicates, String selector, Integer index)
-
-	/**
-	 * Shorthand for <code>find(predicates, null, index..index)</code>
-	 *
-	 * @param selector
-	 * @return new Navigator
-	 */
-	Navigator find(Map<String, Object> predicates, Integer index)
-
-	/**
 	 * Shorthand for <code>find(null, selector, null)</code>
 	 *
 	 * @param selector
@@ -84,33 +122,12 @@ interface Navigator extends Iterable<Navigator> {
 	Navigator find(String selector, int index)
 
 	/**
-	 * Creates a new Navigator instance containing the elements whose attributes match the specified values or patterns.
-	 * The key 'text' can be used to match the text contained in elements. Regular expression Pattern objects may be
-	 * used as values. Note that for selecting by class it is better to use a CSS selector.
-	 * <p>Examples:</p>
-	 * <dl>
-	 * <dt>find(name: "firstName")</dt>
-	 * <dd>selects all elements with the name "firstName"</dd>
-	 * <dt>find(name: "firstName", readonly: "readonly")</dt>
-	 * <dd>selects all elements with the name "firstName" that are read-only</dd>
-	 * <dt>find(text: "I can has cheezburger")</dt>
-	 * <dd>selects all elements containing the exact text</dd>
-	 * <dt>find(text: ~/I can has.+/)</dt>
-	 * <dd>selects all elements whose text matches a regular expression</dd>
-	 * </dl>
-	 * @param predicates a Map with keys representing attributes and values representing required values or patterns
-	 * @return a new Navigator instance containing the matched elements
+	 * Shorthand for <code>find(null, selector, range)</code>
+	 *
+	 * @param selector The css selector
+	 * @return new Navigator
 	 */
-	Navigator find(Map<String, Object> predicates)
-
-	/**
-	 * Selects elements by both CSS selector and attributes. For example find("input", name: "firstName") will select
-	 * all input elements with the name "firstName".
-	 * @param selector a CSS selector
-	 * @param predicates a Map with keys representing attributes and values representing required values or patterns
-	 * @return a new Navigator instance containing the matched elements
-	 */
-	Navigator find(Map<String, Object> predicates, String selector)
+	Navigator find(String selector, Range<Integer> range)
 
 	/**
 	 * Filters the set of elements represented by this Navigator to include only that have one or more descendants
@@ -215,9 +232,9 @@ interface Navigator extends Iterable<Navigator> {
 	Navigator getAt(Collection indexes)
 
 	Navigator add(String selector)
-	
+
 	Navigator add(WebElement[] elements)
-	
+
 	Navigator add(Collection<WebElement> elements)
 
 	/**
@@ -259,6 +276,31 @@ interface Navigator extends Iterable<Navigator> {
 	Navigator next(String selector)
 
 	/**
+	 * Creates a new Navigator instance containing the next sibling elements of the
+	 * current context elements, matching the given attributes.
+	 * <p>
+	 * Unlike {@link #next()}, this method will keep looking for the first
+	 * matching sibling until it finds a match or is out of siblings.
+	 * </p>
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator next(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing the next sibling elements of the
+	 * current context elements, matching the selector and given attributes.
+	 * <p>
+	 * Unlike {@link #next()}, this method will keep looking for the first
+	 * matching sibling until it finds a match or is out of siblings.
+	 * </p>
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator next(Map<String, Object> attributes, String selector)
+
+	/**
 	 * Creates a new Navigator instance containing all following sibling elements of the
 	 * current context elements.
 	 * @return new Navigator instance
@@ -279,12 +321,56 @@ interface Navigator extends Iterable<Navigator> {
 
 	/**
 	 * Creates a new Navigator instance containing all following sibling elements of the
+	 * current context elements, matching the given attributes.
+	 * <p>
+	 * Unlike {@link #next()}, this method will keep looking for the first
+	 * matching sibling until it finds a match or is out of siblings.
+	 * </p>
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator nextAll(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing all following sibling elements of the
+	 * current context elements, matching the selector and given attributes.
+	 * <p>
+	 * Unlike {@link #next()}, this method will keep looking for the first
+	 * matching sibling until it finds a match or is out of siblings.
+	 * </p>
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator nextAll(Map<String, Object> attributes, String selector)
+
+	/**
+	 * Creates a new Navigator instance containing all following sibling elements of the
 	 * current context elements up to, but not including, the first to match the selector.
-	 * 
+	 *
 	 * @param selector to match
 	 * @return new Navigator instance
 	 */
 	Navigator nextUntil(String selector)
+
+	/**
+	 * Creates a new Navigator instance containing all following sibling elements of the
+	 * current context elements up to, but not including, the first to match the given attributes.
+	 *
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator nextUntil(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing all following sibling elements of the
+	 * current context elements up to, but not including, the first to match the selector and given attributes.
+	 *
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator nextUntil(Map<String, Object> attributes, String selector)
 
 	/**
 	 * Creates a new Navigator instance containing the previous sibling elements of the
@@ -313,9 +399,34 @@ interface Navigator extends Iterable<Navigator> {
 	Navigator previous(String selector)
 
 	/**
+	 * Creates a new Navigator instance containing the previous sibling elements of the
+	 * current context elements, matching the given attributes.
+	 * <p>
+	 * Unlike {@link #previous()}, this method will keep looking for the first
+	 * matching sibling until it finds a match or is out of siblings.
+	 * </p>
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator previous(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing the previous sibling elements of the
+	 * current context elements, matching the selector and given attributes.
+	 * <p>
+	 * Unlike {@link #previous()}, this method will keep looking for the first
+	 * matching sibling until it finds a match or is out of siblings.
+	 * </p>
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator previous(Map<String, Object> attributes, String selector)
+
+	/**
 	 * Creates a new Navigator instance containing all preceding sibling elements of the
 	 * current context elements, matching the selector.
-	 * 
+	 *
 	 * @param selector to match
 	 * @return new Navigator instance
 	 */
@@ -323,12 +434,50 @@ interface Navigator extends Iterable<Navigator> {
 
 	/**
 	 * Creates a new Navigator instance containing all preceding sibling elements of the
+	 * current context elements, matching the given attributes.
+	 *
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator prevAll(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing all preceding sibling elements of the
+	 * current context elements, matching the selector and given attributes.
+	 *
+	 * @param selector to match
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator prevAll(Map<String, Object> attributes, String selector)
+
+	/**
+	 * Creates a new Navigator instance containing all preceding sibling elements of the
 	 * current context elements up to, but not including the first matching the selector.
-	 * 
+	 *
 	 * @param selector to match
 	 * @return new Navigator instance
 	 */
 	Navigator prevUntil(String selector)
+
+	/**
+	 * Creates a new Navigator instance containing all preceding sibling elements of the
+	 * current context elements up to, but not including the first matching the given attributes.
+	 *
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator prevUntil(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing all preceding sibling elements of the
+	 * current context elements up to, but not including the first matching the selector and given attributes.
+	 *
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator prevUntil(Map<String, Object> attributes, String selector)
 
 	/**
 	 * Creates a new Navigator instance containing the direct parent elements of the
@@ -345,6 +494,25 @@ interface Navigator extends Iterable<Navigator> {
 	 * @return new Navigator instance
 	 */
 	Navigator parent(String selector)
+
+	/**
+	 * Creates a new Navigator instance containing the direct parent elements of the current
+	 * context elements that match the given attributes.
+	 *
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator parent(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing the direct parent elements of the current
+	 * context elements that match the selector and given attributes.
+	 *
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator parent(Map<String, Object> attributes, String selector)
 
 	/**
 	 * Creates a new Navigator instance containing all the ancestor elements of the
@@ -364,12 +532,50 @@ interface Navigator extends Iterable<Navigator> {
 
 	/**
 	 * Creates a new Navigator instance containing all the ancestor elements of the
+	 * current context elements that match the given attributes.
+	 *
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator parents(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing all the ancestor elements of the
+	 * current context elements that match the given attributes.
+	 *
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator parents(Map<String, Object> attributes, String selector)
+
+	/**
+	 * Creates a new Navigator instance containing all the ancestor elements of the
 	 * current context elements up to but not including the first that matches the selector.
 	 *
 	 * @param selector to match
 	 * @return new Navigator instance
 	 */
 	Navigator parentsUntil(String selector)
+
+	/**
+	 * Creates a new Navigator instance containing all the ancestor elements of the
+	 * current context elements up to but not including the first that matches the given attributes.
+	 *
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator parentsUntil(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing all the ancestor elements of the
+	 * current context elements up to but not including the first that matches the selector and given attributes.
+	 *
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator parentsUntil(Map<String, Object> attributes, String selector)
 
 	/**
 	 * Creates a new Navigator instance containing the first ancestor element of each of the current
@@ -383,17 +589,100 @@ interface Navigator extends Iterable<Navigator> {
 	 */
 	Navigator closest(String selector)
 
+	/**
+	 * Creates a new Navigator instance containing the first ancestor element of each of the current
+	 * context elements that match the given attributes.
+	 * <p>
+	 * Unlike {@link #parent()}, this method will keep traversing up the DOM
+	 * until a match is found or the top of the DOM has been found
+	 * </p>
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator closest(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing the first ancestor element of each of the current
+	 * context elements that match the selector and given attributes.
+	 * <p>
+	 * Unlike {@link #parent()}, this method will keep traversing up the DOM
+	 * until a match is found or the top of the DOM has been found
+	 * </p>
+	 * @param selector to match
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator closest(Map<String, Object> attributes, String selector)
+
+	/**
+	 * Creates a new Navigator instance containing all the child elements of the
+	 * current context elements.
+	 * @return new Navigator instance
+	 */
 	Navigator children()
 
+	/**
+	 * Creates a new Navigator instance containing all the child elements of the
+	 * current context elements that match the selector.
+	 *
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
 	Navigator children(String selector)
 
 	/**
-	 * Selects the
-	 * @return
+	 * Creates a new Navigator instance containing all the child elements of the
+	 * current context elements that match the given attributes.
+	 *
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator children(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing all the child elements of the
+	 * current context elements that match the selector and given attributes.
+	 *
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator children(Map<String, Object> attributes, String selector)
+
+	/**
+	 * Creates a new Navigator instance containing all the sibling elements of the
+	 * current context elements.
+	 * @return new Navigator instance
 	 */
 	Navigator siblings()
 
+	/**
+	 * Creates a new Navigator instance containing all the sibling elements of the
+	 * current context elements that match the selector.
+	 *
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
 	Navigator siblings(String selector)
+
+	/**
+	 * Creates a new Navigator instance containing all the sibling elements of the
+	 * current context elements that match the given attributes.
+	 *
+	 * @param attributes to match
+	 * @return new Navigator instance
+	 */
+	Navigator siblings(Map<String, Object> attributes)
+
+	/**
+	 * Creates a new Navigator instance containing all the sibling elements of the
+	 * current context elements that match the selector and given attributes.
+	 *
+	 * @param attributes to match
+	 * @param selector to match
+	 * @return new Navigator instance
+	 */
+	Navigator siblings(Map<String, Object> attributes, String selector)
 
 	/**
 	 * Returns true if at least one of the context elements has the given class.
@@ -420,14 +709,30 @@ interface Navigator extends Iterable<Navigator> {
 	/**
 	 * Shorthand for <code>hasAttribute("disabled")</code>.
 	 * @return true when the first element is disabled
+	 * @throws java.lang.UnsupportedOperationException if this navigator contains anything else than a button, input, option, select or textarea
 	 */
 	boolean isDisabled()
 
 	/**
+	 * Shorthand for <code>!hasAttribute("disabled")</code>.
+	 * @return true when the first element is enabled
+	 * @throws java.lang.UnsupportedOperationException if this navigator contains anything else than a button, input, option, select or textarea
+	 */
+	boolean isEnabled()
+
+	/**
 	 * Shorthand for <code>hasAttribute("readonly")</code>.
 	 * @return true when the first element is readonly
+	 * @throws java.lang.UnsupportedOperationException if this navigator contains anything else than an input or a textarea
 	 */
 	boolean isReadOnly()
+
+	/**
+	 * Shorthand for <code>!hasAttribute("readonly")</code>.
+	 * @return true when the first element is editable
+	 * @throws java.lang.UnsupportedOperationException if this navigator contains anything else than an input or a textarea
+	 */
+	boolean isEditable()
 
 	/**
 	 * Returns the tag name of the first context element.
@@ -509,7 +814,7 @@ interface Navigator extends Iterable<Navigator> {
 	 */
 	Navigator head()
 
-	 /**
+	/**
 	 * Creates a new Navigator instance containing only the first context element (wrapped).
 	 * @return new Navigator instance
 	 */
@@ -581,7 +886,7 @@ interface Navigator extends Iterable<Navigator> {
 	 * Returns the x coordinate (from the top left corner) of the first element the navigator matches or 0 if it matches nothing.
 	 * <p>
 	 * To get the x coordinate of all matched elements you can use the spread operator {@code navigator*.x}
-	 */	
+	 */
 	int getX()
 
 	/**
@@ -595,9 +900,16 @@ interface Navigator extends Iterable<Navigator> {
 	 * Creates a new Navigator instance containing all elements of this instance with duplicate elements removed
 	 */
 	Navigator unique()
+
+	/**
+	 * Gets the value of a given CSS property. Color values should be returned as rgba strings, so, for example if the "background-color"
+	 * property is set as "green" in the HTML source, the returned value will be "rgba(0, 255, 0, 1)". Note that shorthand
+	 * CSS properties (e.g. background, font, border, border-top, margin, margin-top, padding, padding-top, list-style, outline, pause, cue)
+	 * are not returned, in accordance with the DOM CSS2 specification - you should directly access the longhand properties (e.g. background-color)
+	 * to access the desired values.
+	 *
+	 * @param propertyName
+	 * @return The current, computed value of the property or null if the is not specified.
+	 */
+	String css(String propertyName)
 }
-
-
-
-
-

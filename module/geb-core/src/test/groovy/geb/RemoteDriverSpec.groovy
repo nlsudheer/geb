@@ -14,12 +14,9 @@
  */
 package geb
 
-import org.openqa.selenium.remote.RemoteWebDriver
-
-import org.openqa.selenium.firefox.FirefoxDriver
-
 import geb.test.WebDriverServer
 import org.openqa.selenium.remote.DesiredCapabilities
+import org.openqa.selenium.remote.RemoteWebDriver
 import spock.lang.Specification
 
 class RemoteDriverSpec extends Specification {
@@ -28,17 +25,17 @@ class RemoteDriverSpec extends Specification {
 		when:
 		def server = new WebDriverServer()
 		server.start()
-		
+
 		and:
 		def driver = new RemoteWebDriver(new URL(server.baseUrl[0..-2]), DesiredCapabilities.htmlUnit())
 		def browser = new Browser(driver: driver)
-		
+
 		then:
 		!browser.driver.is(browser.augmentedDriver)
-		
+
 		cleanup:
 		browser?.driver?.quit()
 		server?.stop()
 	}
-	
+
 }

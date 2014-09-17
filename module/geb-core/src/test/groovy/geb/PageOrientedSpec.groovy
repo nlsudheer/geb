@@ -15,13 +15,8 @@
 package geb
 
 import geb.content.SimplePageContent
-import geb.error.InvalidPageContent
-import geb.error.RequiredPageContentNotPresent
-import geb.error.RequiredPageValueNotPresent
-import geb.error.UndefinedAtCheckerException
-import geb.error.UnexpectedPageException
+import geb.error.*
 import geb.test.GebSpecWithServer
-import geb.waiting.WaitTimeoutException
 import spock.lang.Issue
 import spock.lang.Stepwise
 import spock.lang.Unroll
@@ -165,9 +160,19 @@ class PageOrientedSpec extends GebSpecWithServer {
 		e.cause in cause
 
 		where:
-		clicked                        | cause
-		'linkWithNotMatchingTo'        | AssertionError
-		'linkWithToClassThatWaitsInAt' | WaitTimeoutException
+		clicked                           | cause
+		'linkWithNotMatchingTo'           | AssertionError
+		'linkWithToClassWithPlainFalseAt' | null
+	}
+
+	def "unexpected exceptions thrown in at checkers should bubble up from click"() {
+		when:
+		to PageOrientedSpecPageA
+		page.linkWithToClassThrowingExceptionInAt.click()
+
+		then:
+		Throwable e = thrown()
+		e.message == "from at checker"
 	}
 
 	def "exception should be thrown when no to values match"() {
@@ -213,11 +218,11 @@ class PageOrientedSpec extends GebSpecWithServer {
 		then: 'the results are the same'
 		converted == manual
 
-		and: 'the raw page url does not contain the extra slash'
-		getPageUrl(convertToPath('foo')) == 'http://domain.tld/theview?theParam=foo'
+		then: 'the raw page url does not contain the extra slash'
+		getPageUrl(convertToPath('foo')) == '/theview?theParam=foo'
 
 		and: 'the default convertToPath still works'
-		getPageUrl(convertToPath(1, 2)) == 'http://domain.tld/theview/1/2'
+		getPageUrl(convertToPath(1, 2)) == '/theview/1/2'
 	}
 
 	def "verify content aliasing works"() {
@@ -226,7 +231,6 @@ class PageOrientedSpec extends GebSpecWithServer {
 		then:
 		linkTextAlias == 'b'
 	}
-
 
 	def 'at check should fail when no at checker is defined on the page object class'() {
 		when:
@@ -267,7 +271,8 @@ class PageOrientedSpecPageA extends Page {
 	static content = {
 		link(to: PageOrientedSpecPageB) { $("#a") }
 		linkWithNotMatchingTo(to: PageOrientedSpecPageC) { $("#a") }
-		linkWithToClassThatWaitsInAt(to: PageOrientedSpecPageE) { $("#a") }
+		linkWithToClassThrowingExceptionInAt(to: PageWithAtCheckerThrowingException) { $("#a") }
+		linkWithToClassWithPlainFalseAt(to: PageWithAtCheckerReturningFalse) { $("#a") }
 		linkWithVariantTo(to: [PageOrientedSpecPageD, PageOrientedSpecPageC, PageOrientedSpecPageB]) { link }
 		linkWithVariantToNoMatches(to: [PageOrientedSpecPageD, PageOrientedSpecPageC]) { link }
 		linkText { link.text().trim() }
@@ -295,12 +300,8 @@ class PageOrientedSpecPageD extends Page {
 	static at = { assert 1 == 2 }
 }
 
-class PageOrientedSpecPageE extends Page {
-	static at = { waitFor(0) { false } }
-}
-
 class ConvertPage extends Page {
-	static url = 'http://domain.tld/theview'
+	static url = '/theview'
 
 	String convertToPath(param) {
 		return "?theParam=$param"
@@ -327,10 +328,25 @@ class PageContentStringPageParam extends Page {
 	}
 }
 
-class PageWithAtChecker extends Page { static at = { false } }
-class PageWithoutAtChecker extends Page { }
+class PageWithAtChecker extends Page {
+	static at = { false }
+}
+
+class PageWithoutAtChecker extends Page {
+}
+
 class PageWithLinkToPageWithoutAtChecker extends Page {
 	static content = {
 		link(to: [PageWithAtChecker, PageWithoutAtChecker]) { $("#a") }
 	}
+}
+
+class PageWithAtCheckerThrowingException extends Page {
+	static at = { throw new Throwable('from at checker') }
+}
+
+class PageWithAtCheckerReturningFalse extends Page {
+	//this circumvents implicit assertion AST transformation
+	static atChecker = { false }
+	static at = atChecker
 }

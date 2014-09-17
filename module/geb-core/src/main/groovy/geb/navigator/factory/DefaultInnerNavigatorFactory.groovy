@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package geb.navigator.factory
 
 import geb.Browser
@@ -23,7 +22,7 @@ import geb.navigator.NonEmptyNavigator
 import org.openqa.selenium.WebElement
 
 /**
- * Default implementation of {@link InnerNavigatorFactory}.
+ * Default implementation of {@link geb.navigator.factory.InnerNavigatorFactory}.
  *
  * Uses {@link NonEmptyNavigator} and {@link EmptyNavigator}.
  */

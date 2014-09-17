@@ -1,130 +1,128 @@
-import org.apache.tools.ant.filters.ReplaceTokens
-
-apply plugin: "gaelyk"
+/*
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 buildscript {
 	repositories {
-		mavenCentral()
+		maven { url "http://oss.jfrog.org/artifactory/repo" }
+		jcenter()
 	}
-
 	dependencies {
-		classpath 'org.gradle.api.plugins:gradle-gaelyk-plugin:0.4.1'
+		classpath 'io.ratpack:ratpack-gradle:0.9.8'
 	}
 }
 
-ext.appEngineVersion = "1.7.1"
-
-dependencies {
-	groovy "org.codehaus.groovy:groovy-all:1.8.0"
-	
-	compile "org.gaelyk:gaelyk:1.1"
-
-	gaeSdk "com.google.appengine:appengine-java-sdk:$appEngineVersion"
-}
-
-gae {
-	optimizeWar = false
-	downloadSdk = true
-	appcfg {
-		if (project.hasProperty('gaeEmail')) {
-			email = gaeEmail
-		}
-	}
-}
-
-gaelyk {
-	rad = false
-}
-
-check.dependsOn = check.dependsOn.findAll { !(it in Test && it.name == 'gaeFunctionalTest') }
+apply plugin: "io.ratpack.ratpack-groovy"
 
 ext {
-	// The version of manual to put under the “current” label
-	stableVersion = "0.9.1"
-
 	// The old versions of Geb we are including manuals for
-	oldManualVersions = ["0.6.0", "0.6.1", "0.6.2", "0.6.3", "0.7.0", "0.7.1", "0.7.2", "0.9.0"]
+	oldManualVersions = ["0.6.1", "0.6.2", "0.6.3", "0.7.0", "0.7.1", "0.7.2", "0.9.0", "0.9.1", "0.9.2", "0.9.3"]
+
+	currentVersion = isSnapshot ? oldManualVersions.last() : version
+	manualsMetadata = [
+		'old': (oldManualVersions - currentVersion).reverse().join(','),
+		'current': currentVersion,
+		'snapshot': isSnapshot ? project.version : ''
+	]
 }
 
-def manualDependency = {
-	def versionMinor = it.split("\\.")[1].toInteger()
-	def group = versionMinor <= 7 ? "org.codehaus.geb" : "org.gebish"
-	"$group:geb-manual:$it@zip"
+repositories {
+	maven { url "http://oss.jfrog.org/artifactory/repo" }
+	jcenter()
+	maven { url "http://repo.springsource.org/repo" }
+	maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+	maven { url "https://oss.sonatype.org/content/repositories/releases" }
 }
 
 configurations {
 	currentManual
-	
+
 	oldManualVersions.each {
 		delegate."manual-$it"
 	}
 }
 
-repositories {
-	mavenCentral()
-	maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
-	maven { url "https://oss.sonatype.org/content/repositories/releases" }
-}
-
 dependencies {
-	currentManual manualDependency(stableVersion)
-	
+	def manualDependency = {
+		def versionMinor = it.split("\\.")[1].toInteger()
+		def group = versionMinor <= 7 ? "org.codehaus.geb" : "org.gebish"
+		"$group:geb-manual:$it@zip"
+	}
+
+	springloaded "org.springsource.loaded:springloaded:1.1.5.RELEASE"
+	compile ratpack.dependency("groovy")
+	testCompile "org.spockframework:spock-core:0.7-groovy-2.0",
+		"org.jsoup:jsoup:1.7.3",
+		project(':module:geb-spock'),
+		htmlUnitDriverDependency,
+		'org.jsoup:jsoup:1.7.2'
+
+	currentManual project(":doc:manual")
 	oldManualVersions.each {
 		delegate."manual-$it" manualDependency(it)
 	}
 }
 
-task configureWarManuals << {
-	configure(war) {
-		ext.explodeManual = { configuration, label ->
-			def artifacts = configuration.resolvedConfiguration.resolvedArtifacts.findAll {
-				it.name == "geb-manual" && it.type == "zip"
-			}.unique {
-				// sometimes there are two of the same artifact in the configuration
-				it.name
-			}
+task gatherManuals(type: Sync) {
+	inputs.properties(manualsMetadata)
 
-			def size = artifacts.size()
-			assert size == 1 : "$configuration should have one manual artifact, not $size"
-			def artifactFile = artifacts.toList().first().file
-
-			assert artifactFile.exists()
-			into ("manual/$label") {
-				from zipTree(artifactFile)
-			}
+	def configureManualExtraction = { configuration, label ->
+		inputs.files configuration
+		into "src/ratpack/public/manual"
+		into label, {
+			from { zipTree(configuration.singleFile) }
 		}
+	}
 
-		oldManualVersions.each {
-			explodeManual(configurations["manual-$it"], it)
+	oldManualVersions.each {
+		configureManualExtraction(configurations["manual-$it"], it)
+	}
+	configureManualExtraction(configurations.currentManual, isSnapshot ? 'snapshot' : version)
+	def latestStableManualConfiguration = isSnapshot ? configurations["manual-${oldManualVersions.last()}"] : configurations.currentManual
+	configureManualExtraction(latestStableManualConfiguration, "current")
+}
+
+task generateConfigProperties() {
+	def propertiesFile = file('src/ratpack/ratpack.properties')
+	outputs.file(propertiesFile)
+
+	inputs.properties(manualsMetadata)
+
+	doLast {
+		def properties = new Properties()
+		manualsMetadata.each { key, value ->
+			properties.setProperty("other.${key}", value)
 		}
-		explodeManual(configurations.currentManual, stableVersion)
-		explodeManual(configurations.currentManual, "current")
+		properties.setProperty("other.groovy.compileStatic", "true")
+		propertiesFile.withWriter { Writer writer ->
+			properties.store(writer, null)
+		}
 	}
 }
 
-evaluationDependsOn ":doc:manual"
+processResources.inputs.files gatherManuals, generateConfigProperties
 
-war {
-	dependsOn configureWarManuals
+task publish(type: Exec) {
+	commandLine 'git push git@heroku.com:gebish.git master'.tokenize(' ')
 
-	from (project(":doc:manual").packageManual) {
-		into("manual/snapshot")
-	}
+	mustRunAfter ':integration:geb-grails:publish', rootProject.allprojects*.tasks*.withType(Upload)
+}
 
-	def siteVersion = project.hasProperty("liveSite") ? stableVersion.replace(".", "-") : project.version.replace(".", "-").toLowerCase()
-	def properties = [version: siteVersion]
-
-	properties["geb.manual.oldManualVersions"] = oldManualVersions.reverse().join(',')
-	properties["geb.manual.currentManualVersion"] = stableVersion
-	properties["geb.manual.snapshotManualVersion"] = isSnapshot ? project.version : ''
-
-	def filterableExtensions = ["xml", "properties"]
-	inputs.properties(properties)
-	inputs.property('filterableExtensions', filterableExtensions)
-	
-	eachFile { file ->
-		if (filterableExtensions.any { file.name.endsWith(it) }) {
-			file.filter(ReplaceTokens, tokens: properties)
-		}
+idea {
+	module {
+		excludeDirs += gatherManuals.destinationDir
 	}
 }
+

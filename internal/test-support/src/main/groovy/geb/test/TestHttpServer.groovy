@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package geb.test
 
 import org.mortbay.jetty.Connector
@@ -25,25 +24,13 @@ abstract class TestHttpServer {
 	protected server
 	boolean started
 
-	void start(List<Integer> ports = [0]) {
+	void start(int port = 0) {
 		if (!started) {
-			def remainingPorts = new LinkedList(ports)
-			while (server == null && !remainingPorts.isEmpty()) {
-				int port = remainingPorts.removeFirst()
-				def tryServer = new Server()
-				tryServer.addConnector(createConnector(port))
-				def context = new Context(tryServer, "/")
-				addServlets(context)
-				try {
-					tryServer.start()
-					server = tryServer
-				} catch (BindException ignore) {
-					if (!remainingPorts) {
-						throw new RuntimeException("Could not bind to any given ports: $ports")
-					}
-				}
-			}
-
+			server = new Server()
+			server.addConnector(createConnector(port))
+			def context = new Context(server, "/")
+			addServlets(context)
+			server.start()
 			started = true
 		}
 	}

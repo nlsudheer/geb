@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package geb.report
 
-import java.awt.Font
+import javax.imageio.ImageIO
+import java.awt.*
 import java.awt.font.FontRenderContext
 import java.awt.image.BufferedImage
-import static java.awt.Font.PLAIN
+import java.util.List
+
 import static java.awt.Color.BLACK
 import static java.awt.Color.WHITE
+import static java.awt.Font.PLAIN
 import static java.awt.image.BufferedImage.TYPE_INT_RGB
-import javax.imageio.ImageIO
 
 class ExceptionToPngConverter {
 	private static final String FONT_TYPE = 'Monospaced'
